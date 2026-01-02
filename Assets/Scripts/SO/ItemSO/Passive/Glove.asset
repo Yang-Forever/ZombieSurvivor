@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38c7b9dcfe0d1ad449e5fd0049b02b2f, type: 3}
+  m_Name: Glove
+  m_EditorClassIdentifier: 
+  isStartOnly: 0
+  itemType: 0
+  passiveType: 01000000
+  itemName: "\uC804\uD22C\uC6A9\uC7A5\uAC11"
+  itemIcon: {fileID: 0}
+  maxLevel: 5
+  baseWeight: 1
+  levelWeightIncrease: 0.1
+  baseDamage: 0
+  damageRatios: []
+  baseMagazine: 0
+  penetration: 0
+  baseDesc: 
+  value1:
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.1
+  value2: []
+  value3Type: 0
+  value3: []
+  levelUpDesc: "\uACF5\uACA9\uC18D\uB3C4 \uC99D\uAC00 {1}"
+  valueDesc: "\uACF5\uACA9\uC18D\uB3C4 \uC99D\uAC00"

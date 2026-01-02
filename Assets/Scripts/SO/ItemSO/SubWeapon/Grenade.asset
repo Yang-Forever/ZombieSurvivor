@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38c7b9dcfe0d1ad449e5fd0049b02b2f, type: 3}
+  m_Name: Grenade
+  m_EditorClassIdentifier: 
+  isStartOnly: 0
+  itemType: 2
+  itemName: Grenade
+  itemIcon: {fileID: 0}
+  maxLevel: 5
+  baseWeight: 1
+  levelWeightIncrease: 0.2
+  baseDamage: 0
+  damageRatios: []
+  baseDesc: "\uAE30\uBCF8\uB370\uBBF8\uC9C0 {0}\r\n\uC0DD\uC131\uC2DC\uAC04 {1}\r\n\uD3ED\uBC1C
+    \uBC94\uC704 {3}"
+  value1: []
+  value2: []
+  value3: []
+  levelUpDesc: "\uB370\uBBF8\uC9C0 {2}% \uC99D\uAC00\r\n\uACF5\uACA9\uC18D\uB3C4
+    {1}% \uAC10\uC18C\r\n\uD3ED\uBC1C \uBC94\uC704 {3}% \uC99D\uAC00"
+  valueDesc: "1. \uC0DD\uC131 \uC2DC\uAC04(\uACF5\uACA9 \uC18D\uB3C4)\n2. \uB370\uBBF8\uC9C0
+    \uC99D\uAC00\n3. \uD3ED\uBC1C \uBC94\uC704"
