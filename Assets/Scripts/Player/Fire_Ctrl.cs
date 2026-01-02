@@ -46,18 +46,55 @@ public class Fire_Ctrl : MonoBehaviour
 
         if (Input.GetMouseButton(0))
         {
+            if(data.baseData.itemName == "Shotgun")
+            {
+                SpreadFire();
+            }
+            else
+            {
+                StraightFire();
+            }
+
+            fireTimer = GetInterval();
+            Gun.Inst.curMagazine--;
+        }
+    }
+
+    void StraightFire()
+    {
+        GameObject go = Instantiate(bulletPrefab, firePos.transform.position, firePos.transform.rotation);
+        Bullet_Ctrl bullet = go.GetComponent<Bullet_Ctrl>();
+
+        float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;    // 기본 무기 데미지 * 무기 데미지 증감률 * 스텟 공격력 증감률
+        int penetration = data.GetPenetration() + PlayerStats.Inst.Penetration;
+
+        bullet.SetDamage(damage);
+        bullet.SetPenetration(penetration);
+    }
+
+    void SpreadFire()
+    {
+        int pelletCount = data.GetPelletCount();
+
+        float maxAngle = 15.0f;
+
+        float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;
+        int penetration = data.GetPenetration() + PlayerStats.Inst.Penetration;
+
+        float step = (maxAngle * 2f) / (pelletCount - 1);
+        float startAngle = -maxAngle;
+
+        for (int i = 0; i < pelletCount; i++)
+        {
+            float angle = startAngle + step * i;
+
             GameObject go = Instantiate(bulletPrefab, firePos.transform.position, firePos.transform.rotation);
             Bullet_Ctrl bullet = go.GetComponent<Bullet_Ctrl>();
 
-            float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;
-            int penetration = data.GetPenetration() + PlayerStats.Inst.Penetration;
+            go.transform.Rotate(0, angle, 0);
 
             bullet.SetDamage(damage);
             bullet.SetPenetration(penetration);
-
-            fireTimer = GetInterval();
-
-            Gun.Inst.curMagazine--;
         }
     }
 

@@ -1,4 +1,7 @@
+using System.Xml.XPath;
+using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime;
+using UnityEngine.Rendering;
 
 [System.Serializable]
 public class ItemRuntimeData
@@ -16,6 +19,7 @@ public class ItemRuntimeData
         canAppear = true;
     }
 
+    #region 스텟 적용 함수
     public void Apply()
     {
         switch (baseData.itemType)
@@ -150,8 +154,9 @@ public class ItemRuntimeData
 
         return arr[idx];
     }
+    #endregion
 
-
+    #region 실시간 참조 함수
     public float GetWeight()
     {
         if (!canAppear)
@@ -182,4 +187,21 @@ public class ItemRuntimeData
 
         return result;
     }
+
+    public int GetPelletCount()
+    {
+        int result = 0;
+
+        if (baseData.value3Type != Value3Type.PelletCount)
+            return 0; 
+        
+        if (baseData.value3 == null)
+            return 0;
+
+        for (int i = 0; i < curLevel && i < baseData.value3.Length; i++)
+            result += (int)baseData.value3[i];
+
+        return result;
+    }
+    #endregion
 }
