@@ -33,7 +33,7 @@ public class LevelUpMgr : MonoBehaviour
     {
         GameMgr.Inst.state = PlayerState.LevelUp;
 
-        Time.timeScale = 0.0f;
+        GameMgr.Inst.ChangeState(PlayerState.LevelUp);
         lvPanel.SetActive(true);
 
         List<ItemRuntimeData> canPickItems = GetRandomItem(3);
@@ -46,8 +46,8 @@ public class LevelUpMgr : MonoBehaviour
 
     public void Hide()
     {
-        Time.timeScale = 1.0f;
         lvPanel.SetActive(false);
+        GameMgr.Inst.ChangeState(PlayerState.Play);
 
         GameMgr.Inst.state = PlayerState.Play;
     }
@@ -151,5 +151,18 @@ public class LevelUpMgr : MonoBehaviour
         }
 
         return null;
+    }
+
+    public List<ItemRuntimeData> GetOwnedItems()
+    {
+        List<ItemRuntimeData> owned = new List<ItemRuntimeData>();
+
+        foreach (var item in runtimeItems)
+        {
+            if (item.isOwned && item.curLevel > 0)
+                owned.Add(item);
+        }
+
+        return owned;
     }
 }

@@ -44,7 +44,7 @@ public class Fire_Ctrl : MonoBehaviour
         if (Gun.Inst.curMagazine <= 0)
             return;
 
-        if (Input.GetMouseButton(0))
+        if (Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject())
         {
             if(data.baseData.itemName == "Shotgun")
             {
