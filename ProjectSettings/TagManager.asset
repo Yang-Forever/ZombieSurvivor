@@ -7,17 +7,18 @@ TagManager:
   - Zombie
   - Wall
   - ExpObj
+  - Flloor
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - 
+  - Zombie
   - Water
   - UI
-  - BULLET
-  - MAP
-  - SHOP
-  - ITEM
+  - 
+  - 
+  - 
+  - 
   - 
   - 
   - 

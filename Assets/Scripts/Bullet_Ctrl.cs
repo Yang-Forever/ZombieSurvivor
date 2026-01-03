@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class Bullet_Ctrl : MonoBehaviour
 {
-    private float speed = 10.0f;
+    private float speed = 15.0f;
     private float damage;
     private int penetration;
 
     // Start is called before the first frame update
     void Start()
     {
-        Destroy(gameObject, 5.0f);
+        Destroy(gameObject, 3.0f);
     }
 
     // Update is called once per frame

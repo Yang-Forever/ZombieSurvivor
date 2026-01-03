@@ -51,6 +51,9 @@ public class ItemData : ScriptableObject
     [TextArea]
     public string baseDesc;
 
+    [Header("Sub Weapon Setting")]
+    public GameObject subWeaponPrefab;
+
     [Header("Level Value")]
     public float[] value1;
     public float[] value2;

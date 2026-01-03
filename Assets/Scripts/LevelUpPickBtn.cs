@@ -51,21 +51,15 @@ public class LevelUpPickBtn : MonoBehaviour
         int idx = nextLevel - 1;
         string result = temp;
 
-        // -------------------------
-        // 조건부 패시브 문구 제거
-        // -------------------------
-
         // Reduction
         if (!IsConditionalActive(data, PassiveType.Reduction, nextLevel))
         {
             result = result.Replace("\n받는 피해 {2}% 감소", "");
-            //result = result.Replace("받는 피해 감소 {2}%", "");
         }
 
         if (!IsConditionalActive(data, PassiveType.ReloadSpeed, nextLevel))
         {
-            result = result.Replace("\n재장전 속도 감소 {2}%", "");
-            result = result.Replace("재장전 속도 감소 {2}%", "");
+            //result = result.Replace("\n재장전 속도 감소 {2}%", "");
         }
 
         return result

@@ -1,8 +1,3 @@
-using System.Xml.XPath;
-using Unity.VisualScripting;
-using Unity.VisualScripting.Antlr3.Runtime;
-using UnityEngine.Rendering;
-
 [System.Serializable]
 public class ItemRuntimeData
 {
@@ -33,6 +28,7 @@ public class ItemRuntimeData
                 break;
 
             case ItemType.SubWeapon:
+                ApplySubWeapon();
                 break;
         }
     }
@@ -144,6 +140,15 @@ public class ItemRuntimeData
         }
     }
 
+    void ApplySubWeapon()
+    {
+        // √÷√  »◊µÊ Ω√ ¿Â¬¯
+        if(curLevel == 1 && baseData.itemType == ItemType.SubWeapon)
+        {
+            SubWeaponMgr.Inst.SpawnSubWeapon(baseData, this);
+        }
+    }
+
     float GetValue(float[] arr, int idx)
     {
         if (arr == null)
@@ -200,6 +205,16 @@ public class ItemRuntimeData
 
         for (int i = 0; i < curLevel && i < baseData.value3.Length; i++)
             result += (int)baseData.value3[i];
+
+        return result;
+    }
+
+    public float GetCoolTime()
+    {
+        float result = baseData.value1[0];
+
+        for (int i = 1; i < curLevel; i++)
+            result -= baseData.value1[i];
 
         return result;
     }
