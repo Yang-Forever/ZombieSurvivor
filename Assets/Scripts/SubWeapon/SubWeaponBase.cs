@@ -6,6 +6,8 @@ public abstract class SubWeaponBase : MonoBehaviour
 
     float cooldownTimer = 0f;
 
+    public ItemRuntimeData Data => data;
+
     public virtual void Init(ItemRuntimeData runtimeData)
     {
         data = runtimeData;
@@ -30,4 +32,17 @@ public abstract class SubWeaponBase : MonoBehaviour
     }
 
     public abstract void Use();
+
+    public float GetCooldownRatio()
+    {
+        if (data == null) 
+            return 0f;
+
+        float total = data.GetCoolTime();
+
+        if (total <= 0f) 
+            return 0f;
+
+        return Mathf.Clamp01(cooldownTimer / total);
+    }
 }
