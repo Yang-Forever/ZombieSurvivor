@@ -16,6 +16,13 @@ public class Player_Ctrl : MonoBehaviour
     public Image hpBar;
     public Text hpText;
 
+    PlayerAnim_Ctrl playerAnim;
+
+    private void Awake()
+    {
+        playerAnim = GetComponentInChildren<PlayerAnim_Ctrl>();
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -45,6 +52,9 @@ public class Player_Ctrl : MonoBehaviour
             moveDir.Normalize();
 
         transform.position += moveDir * PlayerStats.Inst.MoveSpeed * Time.deltaTime;
+
+        Vector3 localMoveDir = transform.InverseTransformDirection(moveDir);
+        playerAnim.MoveAnim(localMoveDir.x, localMoveDir.z);
     }
 
     void RotateMouse()

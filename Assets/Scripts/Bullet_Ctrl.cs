@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Bullet_Ctrl : MonoBehaviour
 {
-    private float speed = 15.0f;
+    private float speed = 30.0f;
     private float damage;
     private int penetration;
 

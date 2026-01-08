@@ -94,7 +94,7 @@ public class GameMgr : MonoBehaviour
 
     public void GameStart()
     {
-        ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(ItemType.MainWeapon, "Pistol");
+        ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);
 
         Gun.Inst.SetWeapon(weapon);
     }

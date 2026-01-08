@@ -14,17 +14,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isStartOnly: 1
   itemType: 1
+  mainWeapon: 1
   passiveType: 
   itemName: Pistol
   itemIcon: {fileID: 0}
+  conditionalPassives: []
   maxLevel: 5
   baseWeight: 1
   levelWeightIncrease: 0
   baseDamage: 10
-  damageRatios: []
+  damageRatios: 0
   baseMagazine: 7
   penetration: 0
   baseDesc: 
+  subWeaponPrefab: {fileID: 0}
   value1:
   - 0.5
   value2: []

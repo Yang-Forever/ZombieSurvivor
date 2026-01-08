@@ -139,14 +139,11 @@ public class LevelUpMgr : MonoBehaviour
         Hide();
     }
 
-    public ItemRuntimeData FindRuntimeWeapon(ItemType type, string itemName)
+    public ItemRuntimeData FindRuntimeWeapon(MainWeaponType weaponType)
     {
         foreach (var item in runtimeItems)
         {
-            if (item.baseData.itemType != type)
-                continue;
-
-            if (item.baseData.itemName == itemName)
+            if (item.baseData.mainWeapon == weaponType)
                 return item;
         }
 
