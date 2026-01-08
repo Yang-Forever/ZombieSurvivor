@@ -16,8 +16,6 @@ public class PlayerStats : MonoBehaviour
     public float bonusMagnetRangeMultiplier;
     public float bonusMaxHp;
     public float bonusReduction;
-    public float bonusReloadSpeed;
-    public int bonusMagazine;
     public int bonusPenetration;
 
     [HideInInspector] public float curHp;
@@ -41,9 +39,6 @@ public class PlayerStats : MonoBehaviour
 
     public float DamageReduction =>
         bonusReduction;
-
-    public float ReloadAnimSpeed =>
-        1f + bonusReloadSpeed;
 
     public static PlayerStats Inst = null;
 
@@ -83,19 +78,10 @@ public class PlayerStats : MonoBehaviour
         if(curHp >= MaxHp)
             curHp = MaxHp;
     }
+
     public void AddReduction(float value)
     {
         bonusReduction += value;
-    }
-
-    public void AddReloadSpeed(float value)
-    {
-        bonusReloadSpeed += value;
-    }
-
-    public void AddMagazine(int value)
-    {
-        bonusMagazine += value;
     }
 
     public void AddPenetration(int value)

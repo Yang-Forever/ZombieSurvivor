@@ -12,12 +12,17 @@ public enum MainWeaponType
 
 public enum PassiveType
 {
-    None, AtkSpeed, AtkDamage, MoveSpeed, HpMax, MagnetRange, Reduction, ReloadSpeed, Magazine, Penetration
+    None, AtkSpeed, AtkDamage, MoveSpeed, HpMax, MagnetRange, Reduction, Penetration
 }
 
 public enum Value3Type
 {
-    None, PelletCount, PenetrationCount, ExplosionRange
+    None, PelletCount, PenetrationCount, ExplosionRange, KnifeRange
+}
+public enum ValueDisplayType
+{
+    Raw,        // 그대로 표시
+    Percent     // 퍼센트 표시
 }
 
 [System.Serializable]
@@ -65,6 +70,9 @@ public class ItemData : ScriptableObject
     public float[] value2;
     public Value3Type value3Type;
     public float[] value3;
+    public ValueDisplayType value1Display = ValueDisplayType.Raw;
+    public ValueDisplayType value2Display = ValueDisplayType.Raw;
+    public ValueDisplayType value3Display = ValueDisplayType.Raw;
     [TextArea] public string levelUpDesc;
 
     [TextArea]  // 테스트용

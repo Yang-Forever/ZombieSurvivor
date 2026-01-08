@@ -1,3 +1,5 @@
+using UnityEngine;
+
 [System.Serializable]
 public class ItemRuntimeData
 {
@@ -72,14 +74,6 @@ public class ItemRuntimeData
                     PlayerStats.Inst.AddReduction(value);
                     break;
 
-                case PassiveType.ReloadSpeed:
-                    PlayerStats.Inst.AddReloadSpeed(value);
-                    break;
-
-                case PassiveType.Magazine:
-                    PlayerStats.Inst.AddMagazine((int)value);
-                    break;
-
                 case PassiveType.Penetration:
                     PlayerStats.Inst.AddPenetration((int)value);
                     break;
@@ -103,10 +97,6 @@ public class ItemRuntimeData
             {
                 case PassiveType.Reduction:
                     PlayerStats.Inst.AddReduction(value);
-                    break;
-
-                case PassiveType.ReloadSpeed:
-                    PlayerStats.Inst.AddReloadSpeed(value);
                     break;
             }
         }
@@ -143,7 +133,7 @@ public class ItemRuntimeData
     void ApplySubWeapon()
     {
         // 최초 휙득 시 장착
-        if(curLevel == 1 && baseData.itemType == ItemType.SubWeapon)
+        if (curLevel == 1 && baseData.itemType == ItemType.SubWeapon)
         {
             SubWeaponMgr.Inst.SpawnSubWeapon(baseData, this);
         }
@@ -180,6 +170,23 @@ public class ItemRuntimeData
         return 1f + sum;
     }
 
+    public float GetInterval()
+    {
+        float baseInterval = baseData.value1[0];
+
+        float reduceRate = 0f;
+
+        for (int i = 1; i < curLevel && i < baseData.value1.Length; i++)
+            reduceRate += baseData.value1[i];
+
+        reduceRate = Mathf.Clamp(reduceRate, 0f, 0.8f);
+
+        float interval = baseInterval * ((1f - reduceRate) / PlayerStats.Inst.AttackSpeed);
+
+        return Mathf.Max(0.1f, interval);
+    }
+
+
     public int GetPenetration()
     {
         int result = baseData.penetration;
@@ -198,8 +205,8 @@ public class ItemRuntimeData
         int result = 0;
 
         if (baseData.value3Type != Value3Type.PelletCount)
-            return 0; 
-        
+            return 0;
+
         if (baseData.value3 == null)
             return 0;
 
@@ -217,6 +224,106 @@ public class ItemRuntimeData
             result -= baseData.value1[i];
 
         return result;
+    }
+
+    float GetAccumulatedValue(float[] arr, int curLevel)
+    {
+        if (arr == null)
+            return 0f;
+
+        float sum = 0f;
+
+        if (baseData.itemType == ItemType.Passive)
+        {
+            for (int i = 0; i < curLevel && i < arr.Length; i++)
+                sum += arr[i];
+        }
+        else
+        {
+            for(int i = 1; i < curLevel && i < arr.Length; i++)
+                sum += arr[i];
+        }
+
+        return sum;
+    }
+
+    public string GetLevelUpDesc(int nextLevel)
+    {
+        ItemData bd = baseData;
+
+        // 패시브
+        if (bd.itemType == ItemType.Passive)
+        {
+            return ReplaceValue(bd.levelUpDesc, nextLevel);
+        }
+        // 무기
+        else
+        {
+            if (nextLevel == 1)
+                return bd.baseDesc;
+            else
+                return ReplaceValue(bd.levelUpDesc, nextLevel);
+        }
+    }
+
+    string ReplaceValue(string temp, int level)
+    {
+        int idx = level - 1;
+        ItemData bd = baseData;
+        string result = temp;
+
+        // 조건부 패시브 제거
+        if (!IsConditionalActive(PassiveType.Reduction, level))
+        {
+            result = result.Replace("\n받는 피해 {2}% 감소", "");
+        }
+
+        if (!IsConditionalActive(PassiveType.Penetration, level))
+        {
+            result = result.Replace("\n총알 관통 {2}마리 증가", "");
+        }
+
+        return result
+            .Replace("{1}", idx < bd.value1.Length ? FormatValue(bd.value1[idx], bd.value1Display) : "")
+            .Replace("{2}", idx < bd.value2.Length ? FormatValue(bd.value2[idx], bd.value2Display) : "")
+            .Replace("{3}", idx < bd.value3.Length ? FormatValue(bd.value3[idx], bd.value3Display) : "");
+    }
+
+    public string GetTooltipDesc()
+    {
+        if (baseData == null || curLevel <= 0)
+            return "";
+
+        string temp = baseData.valueDesc;
+        string result = temp;
+
+        float v1 = GetAccumulatedValue(baseData.value1, curLevel);
+        float v2 = GetAccumulatedValue(baseData.value2, curLevel);
+        float v3 = GetAccumulatedValue(baseData.value3, curLevel);
+
+        if (v2 <= 0f)
+        {
+            result = result.Replace("\n받는 피해 {2}% 감소", "")
+                           .Replace("\n총알 관통 {2}마리 증가", "");
+
+        }
+
+        return result
+                .Replace("{0}", baseData.baseDamage.ToString())
+                .Replace("{1}", FormatValue(v1, baseData.value1Display))
+                .Replace("{2}", FormatValue(v2, baseData.value2Display))
+                .Replace("{3}", FormatValue(v3, baseData.value3Display));
+    }
+    string FormatValue(float value, ValueDisplayType type)
+    {
+        switch (type)
+        {
+            case ValueDisplayType.Percent:
+                return (value * 100f).ToString("0.#");
+            case ValueDisplayType.Raw:
+            default:
+                return value.ToString("0.#");
+        }
     }
     #endregion
 }

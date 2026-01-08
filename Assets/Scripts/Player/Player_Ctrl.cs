@@ -36,9 +36,6 @@ public class Player_Ctrl : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
             LevelUp();
-
-        if (Input.GetKeyDown(KeyCode.R))
-            Gun.Inst.EventReload();
     }
 
     void MoveKB()
@@ -85,7 +82,13 @@ public class Player_Ctrl : MonoBehaviour
         if (PlayerStats.Inst.curHp <= 0)
             return;
 
-        PlayerStats.Inst.curHp -= damage;
+        float reduction = PlayerStats.Inst.DamageReduction;
+        reduction = Mathf.Clamp01(reduction);
+
+        float finalDamage = damage * (1f - reduction);
+
+        PlayerStats.Inst.curHp -= Mathf.RoundToInt(finalDamage);
+
         hpBar.fillAmount = PlayerStats.Inst.curHp / PlayerStats.Inst.MaxHp;
 
         if (PlayerStats.Inst.curHp <= 0)

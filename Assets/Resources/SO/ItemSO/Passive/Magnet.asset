@@ -10,20 +10,35 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 38c7b9dcfe0d1ad449e5fd0049b02b2f, type: 3}
-  m_Name: Ammo
+  m_Name: Magnet
   m_EditorClassIdentifier: 
   isStartOnly: 0
   itemType: 0
-  itemName: "\uB300\uC6A9\uB7C9 \uD0C4\uCC3D"
+  mainWeapon: 0
+  passiveType: 05000000
+  itemName: "\uC790\uC11D"
   itemIcon: {fileID: 0}
+  conditionalPassives: []
   maxLevel: 5
   baseWeight: 1
   levelWeightIncrease: 0.1
   baseDamage: 0
-  damageRatios: []
+  damageRatios: 0
+  baseMagazine: 0
+  penetration: 0
   baseDesc: 
-  value1: []
+  subWeaponPrefab: {fileID: 0}
+  value1:
+  - 0.2
+  - 0.2
+  - 0.2
+  - 0.3
+  - 0.3
   value2: []
+  value3Type: 0
   value3: []
-  levelUpDesc: 
-  valueDesc: 
+  value1Display: 1
+  value2Display: 0
+  value3Display: 0
+  levelUpDesc: "\uC790\uC11D \uBC94\uC704 {1}% \uC99D\uAC00"
+  valueDesc: "\uC790\uC11D \uBC94\uC704 {1}% \uC99D\uAC00"

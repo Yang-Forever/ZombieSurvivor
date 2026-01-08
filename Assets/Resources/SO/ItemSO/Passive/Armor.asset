@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isStartOnly: 0
   itemType: 0
+  mainWeapon: 0
   passiveType: 04000000
   itemName: "\uAD70\uC6A9 \uC870\uB07C"
   itemIcon: {fileID: 0}
@@ -28,20 +29,24 @@ MonoBehaviour:
   baseMagazine: 0
   penetration: 0
   baseDesc: 
+  subWeaponPrefab: {fileID: 0}
   value1:
   - 20
+  - 20
+  - 20
   - 40
-  - 60
-  - 80
-  - 100
+  - 50
   value2:
   - 0
   - 0
-  - 10
+  - 0.1
   - 0
-  - 10
+  - 0.1
   value3Type: 0
   value3: []
+  value1Display: 0
+  value2Display: 1
+  value3Display: 0
   levelUpDesc: "\uCCB4\uB825 {1} \uC99D\uAC00\n\uBC1B\uB294 \uD53C\uD574 {2}% \uAC10\uC18C"
-  valueDesc: "\uCCB4\uB825 \uC99D\uAC00\n\uBC1B\uB294 \uD53C\uD574 \uAC10\uC18C(3
-    \uB808\uBCA8, 5\uB808\uBCA8)"
+  valueDesc: "\uCCB4\uB825 {1} \uC99D\uAC00\n\uBC1B\uB294 \uD53C\uD574 \uAC10\uC18C
+    {2}% \uAC10\uC18C"

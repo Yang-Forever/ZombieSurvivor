@@ -86,12 +86,6 @@ public class GameMgr : MonoBehaviour
         GameStart();
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        curBullet_Text.text = Gun.Inst.curMagazine + " / ¡Ä";
-    }
-
     public void GameStart()
     {
         ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);

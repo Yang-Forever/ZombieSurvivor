@@ -31,16 +31,23 @@ public class LevelUpMgr : MonoBehaviour
 
     public void Show()
     {
-        GameMgr.Inst.state = PlayerState.LevelUp;
-
         GameMgr.Inst.ChangeState(PlayerState.LevelUp);
         lvPanel.SetActive(true);
 
         List<ItemRuntimeData> canPickItems = GetRandomItem(3);
 
-        for(int i = 0; i < lvPickBtn.Length; i++)
+        for (int i = 0; i < lvPickBtn.Length; i++)
         {
-            lvPickBtn[i].SetUp(canPickItems[i]);
+            if (i < canPickItems.Count)
+            {
+                lvPickBtn[i].SetUp(canPickItems[i]);
+                lvPickBtn[i].gameObject.SetActive(true);
+            }
+            else
+            {
+                lvPickBtn[i].gameObject.SetActive(false);
+                Hide();
+            }
         }
     }
 
@@ -48,8 +55,6 @@ public class LevelUpMgr : MonoBehaviour
     {
         lvPanel.SetActive(false);
         GameMgr.Inst.ChangeState(PlayerState.Play);
-
-        GameMgr.Inst.state = PlayerState.Play;
     }
 
     List<ItemRuntimeData> GetRandomItem(int count)
@@ -87,7 +92,19 @@ public class LevelUpMgr : MonoBehaviour
             }
         }
 
-        return GetWeightRandomItem(getItem, count);
+        // 아이템 부족 시 카드 중복 출현
+        List<ItemRuntimeData> picked = GetWeightRandomItem(getItem, count);
+
+        if (picked.Count > 0 && picked.Count < count)
+        {
+            while (picked.Count < count)
+            {
+                int rand = Random.Range(0, picked.Count);
+                picked.Add(picked[rand]);
+            }
+        }
+
+        return picked;
     }
 
     List<ItemRuntimeData> GetWeightRandomItem(List<ItemRuntimeData> list, int count)

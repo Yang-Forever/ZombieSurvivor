@@ -14,16 +14,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isStartOnly: 0
   itemType: 0
+  mainWeapon: 0
+  passiveType: 03000000
   itemName: "\uAD70\uD654"
   itemIcon: {fileID: 0}
+  conditionalPassives: []
   maxLevel: 5
   baseWeight: 1
   levelWeightIncrease: 0.1
   baseDamage: 0
-  damageRatios: []
+  damageRatios: 0
+  baseMagazine: 0
+  penetration: 0
   baseDesc: 
-  value1: []
+  subWeaponPrefab: {fileID: 0}
+  value1:
+  - 0.1
+  - 0.1
+  - 0.1
+  - 0.1
+  - 0.2
   value2: []
+  value3Type: 0
   value3: []
-  levelUpDesc: 
-  valueDesc: 
+  value1Display: 1
+  value2Display: 0
+  value3Display: 0
+  levelUpDesc: "\uC774\uB3D9\uC18D\uB3C4 {1}% \uC99D\uAC00"
+  valueDesc: "\uC774\uB3D9\uC18D\uB3C4 {1}% \uC99D\uAC00"

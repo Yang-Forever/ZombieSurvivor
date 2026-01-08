@@ -29,19 +29,13 @@ public class Fire_Ctrl : MonoBehaviour
         data = Gun.Inst.curWeapon;
 
         fireTimer -= Time.deltaTime;
-        Fire();
+        Fire(data);
     }
 
     // ¼öµ¿
-    void Fire()
+    void Fire(ItemRuntimeData runtimeData)
     {
         if (fireTimer > 0.0f)
-            return;
-
-        if (Gun.Inst.isReload)
-            return;
-
-        if (Gun.Inst.curMagazine <= 0)
             return;
 
         if (Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject())
@@ -55,8 +49,7 @@ public class Fire_Ctrl : MonoBehaviour
                 StraightFire();
             }
 
-            fireTimer = GetInterval();
-            Gun.Inst.curMagazine--;
+            fireTimer = runtimeData.GetInterval();
         }
     }
 
@@ -96,22 +89,6 @@ public class Fire_Ctrl : MonoBehaviour
             bullet.SetDamage(damage);
             bullet.SetPenetration(penetration);
         }
-    }
-
-    float GetInterval()
-    {
-        float baseInterval = data.baseData.value1[0];
-
-        float reduceRate = 0f;
-
-        for (int i = 1; i < data.curLevel && i < data.baseData.value1.Length; i++)
-            reduceRate += data.baseData.value1[i];
-
-        reduceRate = Mathf.Clamp(reduceRate, 0f, 0.8f);
-
-        float interval = baseInterval * ((1f - reduceRate) / PlayerStats.Inst.AttackSpeed);
-
-        return Mathf.Max(0.1f, interval);
     }
 
 }
