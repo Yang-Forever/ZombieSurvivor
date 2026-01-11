@@ -1,12 +1,12 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.AI;
 
 public enum ZombieType
 {
     Normal,
     Fast,
-    Tank,
     Boss,
     None
 }
@@ -15,11 +15,22 @@ public class Zombie_Ctrl : MonoBehaviour
 {
     public ZombieType zomType = ZombieType.None;
 
-    [Header("State")]
-    private float initHp = 100;
-    private float currHp = 100;
-    private int damage = 10;
-    private float moveSpeed = 3.0f;
+    [Header("Base Stat")]
+    [SerializeField] float baseHp;
+    [SerializeField] float baseMoveSpeed;
+    [SerializeField] int baseDamage;
+
+    [Header("Runtime Stat")]
+    float maxHp;
+    float currHp;
+    float moveSpeed;
+    int damage;
+
+    [Header("Multiplier")]
+    public static float HpMultiplier = 1f;
+    public static float SpeedMultiplier = 1f;
+    public static float DamageMultiplier = 1f;
+
     private float atkRange = 2.0f;
     private float atkCool = 1.0f;
     float atkTimer = 0.0f;
@@ -27,7 +38,6 @@ public class Zombie_Ctrl : MonoBehaviour
     // 현재 상태
     AnimState state = AnimState.idle;
     [HideInInspector] public AnimState curState = AnimState.idle;
-    AnimState aiState = AnimState.idle;
     [HideInInspector] public bool isDead = false;
     bool hasAttacked = false;
     Player_Ctrl player;
@@ -38,7 +48,32 @@ public class Zombie_Ctrl : MonoBehaviour
 
     public Transform target;
 
-    private ZombiePool pool; 
+    private ZombiePool pool;
+
+    [Header("Boss State")]
+    public Transform dashLine;
+    public Canvas dashCanvas;
+    public Image dashFill;
+    public GameObject dashHitBox;
+
+    // 패턴 타이머
+    float patternTimer = 10f;
+    float patternCool = 10f;
+
+    // 돌진 차징
+    float dashChargeTime = 0.8f;
+    float dashChargeTimer = 0f;
+    bool isChargingDash = false;
+
+    // 돌진 실행
+    bool isDashing = false;
+    float dashSpeed = 7f;
+    float dashTime = 1.2f;
+    float dashTimer;
+    Vector3 dashDir;
+
+    // 거리 조건
+    float SkillRange = 8f;
 
     private void Awake()
     {
@@ -56,7 +91,7 @@ public class Zombie_Ctrl : MonoBehaviour
         target = GameObject.Find("Player").transform;
         player = target.GetComponent<Player_Ctrl>();
         animator = GetComponentInChildren<Animator>();
-        currHp = initHp;
+        currHp = baseHp;
     }
 
     // Update is called once per frame
@@ -68,7 +103,10 @@ public class Zombie_Ctrl : MonoBehaviour
         if (atkTimer > 0.0f)
             atkTimer -= Time.deltaTime;
 
-        ZombieMove();
+        if (zomType == ZombieType.Boss)
+            BossUpdate();
+        else
+            ZombieMove();
     }
 
     void ZombieSetUp()
@@ -77,37 +115,40 @@ public class Zombie_Ctrl : MonoBehaviour
         {
             case ZombieType.Normal: // 기본 좀비
                 {
-                    initHp = 60;
-                    damage = 10;
-                    moveSpeed = 3.0f;
-                    atkRange = 1.3f;
+                    baseHp = 60f;
+                    baseMoveSpeed = 3.0f;
+                    baseDamage = 10;
+                    atkRange = 2f;
                 }
                 break;
 
             case ZombieType.Fast:   // 속도(이동속도)가 빠른 좀비
                 {
-                    initHp = 40;
-                    damage = 10;
-                    moveSpeed = 5.0f;
-                    atkRange = 2.0f;
-                }
-                break;
-
-            case ZombieType.Tank:   // 체력이 많은 좀비
-                {
-                    initHp = 200;
-                    damage = 10;
-                    moveSpeed = 2.0f;
-                    atkRange = 1.5f;
+                    baseHp = 40f;
+                    baseMoveSpeed = 4.0f;
+                    baseDamage = 10;
+                    atkRange = 2f;
                 }
                 break;
 
             case ZombieType.Boss:   // 보스
                 {
-
+                    baseHp = 400f;
+                    baseMoveSpeed = 3.0f;
+                    baseDamage = 20;
+                    atkRange = 3f;
                 }
                 break;
         }
+    }
+
+    void ApplyDifficultyStat()
+    {
+        maxHp = baseHp * HpMultiplier;
+        currHp = maxHp;
+
+        moveSpeed = baseMoveSpeed * SpeedMultiplier;
+        damage = Mathf.RoundToInt(baseDamage * DamageMultiplier);
     }
 
     #region Zombie Action
@@ -139,6 +180,9 @@ public class Zombie_Ctrl : MonoBehaviour
 
     void ZombieAttack()
     {
+        if (isDashing || isChargingDash)
+            return;
+
         if (atkTimer > 0f)
             return;
 
@@ -147,6 +191,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
         ChangeAnim(AnimState.attack, 0.12f);
     }
+
     public void OnAtkHit()
     {
         if (hasAttacked || isDead)
@@ -182,6 +227,104 @@ public class Zombie_Ctrl : MonoBehaviour
 
     #endregion
 
+    #region Boss Action
+    void BossUpdate()
+    {
+        float dist = Vector3.Distance(transform.position, target.position);
+
+        // 대쉬 중
+        if (isDashing)
+        {
+            DashUpdate();
+            return;
+        }
+
+        // 대쉬 차징 중
+        if (isChargingDash)
+        {
+            DashChargeUpdate();
+            return;
+        }
+
+        // 기본 이동
+        ZombieMove();
+
+        // 스킬 범위 안에서만 패턴 카운트
+        if (dist <= SkillRange)
+        {
+            patternTimer -= Time.deltaTime;
+
+            if (patternTimer <= 0f)
+                StartDashCharge();
+        }
+        else
+        {
+            // 멀어지면 쿨타임 리셋
+            patternTimer = patternCool;
+        }
+    }
+
+    void StartDashCharge()
+    {
+        patternTimer = patternCool;
+
+        isChargingDash = true;
+        dashChargeTimer = 0f;
+
+        dashFill.fillAmount = 0f;
+        dashCanvas.gameObject.SetActive(true);
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+        dashDir = dir.normalized;
+
+        dashLine.transform.forward = dashDir;
+
+        dashCanvas.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+        ChangeAnim(AnimState.rage, 0.12f);
+    }
+
+    void DashChargeUpdate()
+    {
+        dashChargeTimer += Time.deltaTime;
+        dashFill.fillAmount = dashChargeTimer / dashChargeTime;
+
+        if (dashFill.fillAmount >= 1f)
+            StartDash();
+    }
+
+    void StartDash()
+    {
+        isChargingDash = false;
+        isDashing = true;
+
+        dashTimer = dashTime;
+        dashCanvas.gameObject.SetActive(false);
+        dashHitBox.SetActive(true);
+
+        ChangeAnim(AnimState.dash, 0.12f);
+    }
+
+    void DashUpdate()
+    {
+        dashTimer -= Time.deltaTime;
+
+        transform.position += dashDir * dashSpeed * Time.deltaTime;
+
+        if (dashTimer <= 0f)
+            EndDash();
+    }
+
+    public void EndDash()
+    {
+        isDashing = false;
+        dashHitBox.SetActive(false);
+
+        ChangeAnim(AnimState.trace, 0.12f);
+    }
+    #endregion
+
 
     public void HitDamage(float damage)
     {
@@ -190,14 +333,27 @@ public class Zombie_Ctrl : MonoBehaviour
 
         currHp -= damage;
 
+        Debug.Log("Hit");
+
         if (currHp <= 0)
         {
             currHp = 0;
             isDead = true;
 
-            SpawnExp(10);
-
-            StartCoroutine(Die());
+            if (zomType == ZombieType.Boss)
+            {
+                SpawnExp(100);
+                StartCoroutine(BossDie());
+            }
+            else
+            {
+                SpawnExp(10);
+                StartCoroutine(Die());
+            }
+        }
+        else
+        {
+            ChangeAnim(AnimState.hit, 0.12f);
         }
     }
 
@@ -231,10 +387,42 @@ public class Zombie_Ctrl : MonoBehaviour
         pool.ReturnZombie(this);
     }
 
+    IEnumerator BossDie()
+    {
+        ChangeAnim(AnimState.die, 0.12f);
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb)
+            rb.isKinematic = true;
+
+        Collider col = GetComponent<Collider>();
+        if (col)
+            col.enabled = false;
+
+        NavMeshAgent nav = GetComponent<NavMeshAgent>();
+        if (nav)
+            nav.enabled = false;
+
+        yield return new WaitForSeconds(3f);
+
+        Destroy(gameObject);
+    }
+
     public void ResetZombie()
     {
-        currHp = initHp;
+        ApplyDifficultyStat();
+
         atkTimer = 0.0f;
+        hasAttacked = false;
+
+        if (zomType == ZombieType.Boss)
+        {
+            isChargingDash = false;
+            isDashing = false;
+
+            dashCanvas.gameObject.SetActive(false);
+            patternTimer = patternCool;
+        }
 
         ChangeAnim(AnimState.idle);
         state = AnimState.idle;

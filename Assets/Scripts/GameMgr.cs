@@ -15,8 +15,10 @@ public enum PlayerState
 public class GameMgr : MonoBehaviour
 {
     [Header("UI Setting")]
-    public Text curBullet_Text;
     public Text levelText;
+    public Text timeText;
+    public Text bossText;
+    [HideInInspector] public float playTime = 0.0f;
 
     [Header("Inven Setting")]
     public Button inven_Btn;
@@ -28,6 +30,15 @@ public class GameMgr : MonoBehaviour
     public GameObject configPanel;
     public Button configCloseBtn;
     public Button ExitBtn;
+
+    [Header("Difficulty")]
+    public int difficultyLevel = 0;
+    float difficultyInterval = 180f;
+    float nextDifficultyTime = 180f;
+
+    [Header("Boss")]
+    float bossInterval = 300f;
+    float nextBossTime = 300f;
 
     public PlayerState state = PlayerState.Play;
 
@@ -86,6 +97,19 @@ public class GameMgr : MonoBehaviour
         GameStart();
     }
 
+    void Update()
+    {
+        if (state != PlayerState.Play)
+            return;
+
+        playTime += Time.deltaTime;
+
+        timeText.text = $"{(int)(playTime / 60):00} : {(int)(playTime % 60):00}";
+
+        CheckDifficulty();
+        CheckBossSpawn();
+    }
+
     public void GameStart()
     {
         ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);
@@ -109,6 +133,26 @@ public class GameMgr : MonoBehaviour
             case PlayerState.Die:
                 Time.timeScale = 0f;
                 break;
+        }
+    }
+
+    void CheckDifficulty()
+    {
+        if (playTime >= nextDifficultyTime)
+        {
+            difficultyLevel++;
+            nextDifficultyTime += difficultyInterval;
+
+            ZombieSpawner.Inst.IncreaseDifficulty(difficultyLevel);
+        }
+    }
+
+    void CheckBossSpawn()
+    {
+        if (playTime >= nextBossTime)
+        {
+            nextBossTime += bossInterval;
+            ZombieSpawner.Inst.SpawnBoss();
         }
     }
 

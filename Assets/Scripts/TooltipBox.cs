@@ -18,7 +18,7 @@ public class TooltipBox : MonoBehaviour
     {
         descText.text = data.GetTooltipDesc();
 
-        Vector3 offset = new Vector3(2f, 2f, 0);
+        Vector3 offset = new Vector3(10f, 10f, 0);
 
         tooltipBox.SetActive(true);
         tooltipBox.transform.position = mousePos + offset;

@@ -55,9 +55,11 @@ MonoBehaviour:
     Idle: {fileID: 7400000, guid: 9d64135e30478c04d804134715c08e92, type: 2}
     Move: {fileID: 7400000, guid: 512692aaf06d34c4799f8f3eada4c0b7, type: 2}
     Attack: {fileID: 7400000, guid: e9312d75d6c70d146bb4c07327ae4922, type: 2}
-    hit: {fileID: 7400000, guid: eb9c2b0a9b6c038439bad1d708d6ee7b, type: 2}
+    Hit: {fileID: 7400000, guid: eb9c2b0a9b6c038439bad1d708d6ee7b, type: 2}
     Die: {fileID: 7400000, guid: 5e82af75ee03dd74f9b5d7eeb2ade817, type: 2}
   target: {fileID: 0}
+  dashCanvas: {fileID: 0}
+  dashFill: {fileID: 0}
 --- !u!54 &8941851277988077332
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -120,7 +122,7 @@ NavMeshAgent:
   m_Acceleration: 1000
   avoidancePriority: 51
   m_AngularSpeed: 1000
-  m_StoppingDistance: 1.5
+  m_StoppingDistance: 2
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1

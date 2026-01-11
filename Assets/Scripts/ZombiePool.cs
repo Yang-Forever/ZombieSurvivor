@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 
@@ -8,6 +6,7 @@ public class ZombiePool : MonoBehaviour
     [Header("Zombie Prefabs")]
     public GameObject normalZombie;
     public GameObject fastZombie;
+    public GameObject bossZombie;
 
     public ObjectPool<Zombie_Ctrl> normalPool;
     public ObjectPool<Zombie_Ctrl> fastPool;
@@ -91,5 +90,13 @@ public class ZombiePool : MonoBehaviour
 
         return z;
     }
+    public Zombie_Ctrl SpawnBoss(Vector3 pos)
+    {
+        Zombie_Ctrl boss = Instantiate(bossZombie, pos, Quaternion.identity).GetComponent<Zombie_Ctrl>();
 
+        boss.zomType = ZombieType.Boss;
+        boss.ResetZombie();
+
+        return boss;
+    }
 }
