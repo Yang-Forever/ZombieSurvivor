@@ -17,7 +17,7 @@ MonoBehaviour:
   mainWeapon: 0
   passiveType: 04000000
   itemName: "\uAD70\uC6A9 \uC870\uB07C"
-  itemIcon: {fileID: 0}
+  itemIcon: {fileID: -47831657, guid: 5da21d6340c77244ba5d5b38c7efde3d, type: 3}
   conditionalPassives:
   - type: 6
     activeLevels: 0300000005000000

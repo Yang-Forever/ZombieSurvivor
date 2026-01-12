@@ -17,7 +17,7 @@ MonoBehaviour:
   mainWeapon: 2
   passiveType: 
   itemName: Rifle
-  itemIcon: {fileID: 0}
+  itemIcon: {fileID: -2116494676, guid: 5da21d6340c77244ba5d5b38c7efde3d, type: 3}
   conditionalPassives: []
   maxLevel: 5
   baseWeight: 1

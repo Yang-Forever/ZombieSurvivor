@@ -7,17 +7,19 @@ TagManager:
   - Zombie
   - Wall
   - ExpObj
-  - Flloor
+  - House
+  - Fence
+  - Ground
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Zombie
+  - Player
   - Water
   - UI
-  - 
-  - 
-  - 
+  - Zombie
+  - BossDash
+  - CameraBounds
   - 
   - 
   - 

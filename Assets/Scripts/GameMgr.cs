@@ -9,16 +9,19 @@ public enum PlayerState
     LevelUp,
     Inventory,
     Option,
-    Die
+    GameEnd
 }
 
 public class GameMgr : MonoBehaviour
 {
     [Header("UI Setting")]
+    [HideInInspector] public float playTime = 900.0f;
     public Text levelText;
     public Text timeText;
-    public Text bossText;
-    [HideInInspector] public float playTime = 0.0f;
+    public Text scoreText;
+    public Text killText;
+    int score = 0;
+    int killScore = 0;
 
     [Header("Inven Setting")]
     public Button inven_Btn;
@@ -33,12 +36,12 @@ public class GameMgr : MonoBehaviour
 
     [Header("Difficulty")]
     public int difficultyLevel = 0;
-    float difficultyInterval = 180f;
-    float nextDifficultyTime = 180f;
+    float difficultyInterval = 60f;
+    float nextDifficultyTime = 840f;
 
     [Header("Boss")]
-    float bossInterval = 300f;
-    float nextBossTime = 300f;
+    float bossInterval = 240f;
+    float nextBossTime = 760f;
 
     public PlayerState state = PlayerState.Play;
 
@@ -47,6 +50,11 @@ public class GameMgr : MonoBehaviour
     private void Awake()
     {
          Inst = this;
+
+        difficultyLevel = 0;
+        playTime = 900f;
+        score = 0;
+        killScore = 0;
     }
 
     // Start is called before the first frame update
@@ -102,12 +110,22 @@ public class GameMgr : MonoBehaviour
         if (state != PlayerState.Play)
             return;
 
-        playTime += Time.deltaTime;
+        playTime -= Time.deltaTime;
 
         timeText.text = $"{(int)(playTime / 60):00} : {(int)(playTime % 60):00}";
+        scoreText.text = "Score : " + score;
+        killText.text = killScore.ToString();
 
         CheckDifficulty();
         CheckBossSpawn();
+
+        if(playTime <= 0)
+        {
+            state = PlayerState.GameEnd;
+
+            // 게임 종료 판넬 출력
+
+        }
     }
 
     public void GameStart()
@@ -130,7 +148,7 @@ public class GameMgr : MonoBehaviour
             case PlayerState.LevelUp:
             case PlayerState.Inventory:
             case PlayerState.Option:
-            case PlayerState.Die:
+            case PlayerState.GameEnd:
                 Time.timeScale = 0f;
                 break;
         }
@@ -138,10 +156,10 @@ public class GameMgr : MonoBehaviour
 
     void CheckDifficulty()
     {
-        if (playTime >= nextDifficultyTime)
+        if (playTime <= nextDifficultyTime)
         {
             difficultyLevel++;
-            nextDifficultyTime += difficultyInterval;
+            nextDifficultyTime -= difficultyInterval;
 
             ZombieSpawner.Inst.IncreaseDifficulty(difficultyLevel);
         }
@@ -149,11 +167,17 @@ public class GameMgr : MonoBehaviour
 
     void CheckBossSpawn()
     {
-        if (playTime >= nextBossTime)
+        if (playTime <= nextBossTime)
         {
-            nextBossTime += bossInterval;
+            nextBossTime -= bossInterval;
             ZombieSpawner.Inst.SpawnBoss();
         }
+    }
+
+    public void KillZombie(int value)
+    {
+        score += value + difficultyLevel * 10;
+        killScore++;
     }
 
     public static bool IsPointerOverUIObject() //UGUI의 UI들이 먼저 피킹되는지 확인하는 함수

@@ -6,6 +6,8 @@ public class Bullet_Ctrl : MonoBehaviour
     private float damage;
     private int penetration;
 
+    public GameObject sparkEffect;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -36,6 +38,9 @@ public class Bullet_Ctrl : MonoBehaviour
             coll.gameObject.GetComponent<Zombie_Ctrl>().HitDamage(damage);
 
             penetration--;
+
+            //GameObject spark = Instantiate(sparkEffect, transform.position, Quaternion.identity);
+            //Destroy(spark, spark.GetComponent<ParticleSystem>().main.duration + 0.2f);
 
             if (penetration < 0)
                 Destroy(gameObject);

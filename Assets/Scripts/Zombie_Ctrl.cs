@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.AI;
+using UnityEditor;
 
 public enum ZombieType
 {
@@ -61,14 +62,14 @@ public class Zombie_Ctrl : MonoBehaviour
     float patternCool = 10f;
 
     // 돌진 차징
-    float dashChargeTime = 0.8f;
+    float dashChargeTime = 1f;
     float dashChargeTimer = 0f;
     bool isChargingDash = false;
 
     // 돌진 실행
     bool isDashing = false;
     float dashSpeed = 7f;
-    float dashTime = 1.2f;
+    float dashTime = 1.5f;
     float dashTimer;
     Vector3 dashDir;
 
@@ -157,6 +158,12 @@ public class Zombie_Ctrl : MonoBehaviour
         if (isDead)
             return;
 
+        if (state == AnimState.attack)
+            return;
+
+        if (state == AnimState.rage)
+            return;
+
         Vector3 dir = target.position - transform.position;
         dir.y = 0;
 
@@ -194,13 +201,27 @@ public class Zombie_Ctrl : MonoBehaviour
 
     public void OnAtkHit()
     {
-        if (hasAttacked || isDead)
+        if (hasAttacked || isDead || player == null)
+            return;
+
+        float dist = Vector3.Distance(transform.position, player.transform.position);
+        if (dist > atkRange)
+            return;
+
+        Vector3 dirToPlayer = (player.transform.position - transform.position).normalized;
+        float dot = Vector3.Dot(transform.forward, dirToPlayer);
+
+        if (dot < 0.5f)
             return;
 
         hasAttacked = true;
-
         if (player != null)
             player.HitDamage(damage);
+    }
+
+    public void OnAttackEnd()
+    {
+        ChangeAnim(AnimState.trace, 0.12f);
     }
 
     void ChangeAnim(AnimState newState, float crossTime = 0.0f)
@@ -280,7 +301,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
         dashLine.transform.forward = dashDir;
 
-        dashCanvas.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        dashCanvas.transform.localRotation = Quaternion.Euler(90f, -90f, 0f);
 
         ChangeAnim(AnimState.rage, 0.12f);
     }
@@ -303,6 +324,19 @@ public class Zombie_Ctrl : MonoBehaviour
         dashCanvas.gameObject.SetActive(false);
         dashHitBox.SetActive(true);
 
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent == true)
+        {
+            agent.isStopped = true;
+            agent.updatePosition = false;
+            agent.updateRotation = false;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
+            agent.velocity = Vector3.zero;
+            agent.avoidancePriority = 0;
+        }
+
+        gameObject.layer = LayerMask.NameToLayer("BossDash");
+
         ChangeAnim(AnimState.dash, 0.12f);
     }
 
@@ -321,6 +355,19 @@ public class Zombie_Ctrl : MonoBehaviour
         isDashing = false;
         dashHitBox.SetActive(false);
 
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent)
+        {
+            agent.Warp(transform.position);
+            agent.isStopped = false;
+            agent.updatePosition = true;
+            agent.updateRotation = true;
+            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+            agent.avoidancePriority = 10;
+        }
+
+        gameObject.layer = LayerMask.NameToLayer("Zombie");
+
         ChangeAnim(AnimState.trace, 0.12f);
     }
     #endregion
@@ -333,8 +380,6 @@ public class Zombie_Ctrl : MonoBehaviour
 
         currHp -= damage;
 
-        Debug.Log("Hit");
-
         if (currHp <= 0)
         {
             currHp = 0;
@@ -343,16 +388,21 @@ public class Zombie_Ctrl : MonoBehaviour
             if (zomType == ZombieType.Boss)
             {
                 SpawnExp(100);
+                GameMgr.Inst.KillZombie(100);
                 StartCoroutine(BossDie());
             }
             else
             {
                 SpawnExp(10);
+                GameMgr.Inst.KillZombie(10);
                 StartCoroutine(Die());
             }
         }
         else
         {
+            if (state == AnimState.attack || state == AnimState.dash || state == AnimState.rage)
+                return;
+
             ChangeAnim(AnimState.hit, 0.12f);
         }
     }
@@ -411,6 +461,7 @@ public class Zombie_Ctrl : MonoBehaviour
     public void ResetZombie()
     {
         ApplyDifficultyStat();
+        ZombieSetUp();
 
         atkTimer = 0.0f;
         hasAttacked = false;
@@ -456,4 +507,19 @@ public class Zombie_Ctrl : MonoBehaviour
         exp.SetUpExp(value);
     }
 
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!(zomType == ZombieType.Boss))
+            return;
+
+        if (!isDashing)
+            return;
+
+        if (collision.gameObject.CompareTag("Wall") ||
+            collision.gameObject.CompareTag("House") ||
+            collision.gameObject.CompareTag("Fence"))
+        {
+            EndDash();
+        }
+    }
 }

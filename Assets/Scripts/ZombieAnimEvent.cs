@@ -15,4 +15,10 @@ public class ZombieAnimEvent : MonoBehaviour
         if (zombie != null)
             zombie.OnAtkHit();
     }
+
+    public void Event_AttackEnd()
+    {
+        if (zombie != null)
+            zombie.OnAttackEnd();
+    }
 }

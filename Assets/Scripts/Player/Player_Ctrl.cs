@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public class Player_Ctrl : MonoBehaviour
@@ -36,6 +37,8 @@ public class Player_Ctrl : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Alpha2))
             LevelUp();
+
+        hpText.text = PlayerStats.Inst.curHp + " / " + PlayerStats.Inst.MaxHp;
     }
 
     void MoveKB()
@@ -96,7 +99,7 @@ public class Player_Ctrl : MonoBehaviour
             PlayerStats.Inst.curHp = 0;
 
             // 게임 종료
-            GameMgr.Inst.state = PlayerState.Die;
+            GameMgr.Inst.state = PlayerState.GameEnd;
             Time.timeScale = 0;
         }
     }
@@ -117,7 +120,7 @@ public class Player_Ctrl : MonoBehaviour
     {
         curExp -= maxExp;
         level++;
-
+        curExp = 0;
         LevelUpMgr.Inst.Show();
 
         if(maxExp <= 300)

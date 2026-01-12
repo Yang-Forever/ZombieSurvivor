@@ -50,29 +50,31 @@ public class ZombieSpawner : MonoBehaviour
         if (!player)
             return;
 
-        int maxTry = 10;
+        const int maxTry = 20;
 
         for (int i = 0; i < maxTry; i++)
         {
-            Vector3 dir = Random.insideUnitSphere;
-            dir.y = 0f;
-            dir.Normalize();
-
+            Vector2 circle = Random.insideUnitCircle.normalized;
             float dist = Random.Range(minDistance, spawnRadius);
-            Vector3 spawnPos = player.position + dir * dist;
 
-            if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+            Vector3 spawnPos = player.position + new Vector3(circle.x, 0f, circle.y) * dist;
+
+            if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 1.5f, NavMesh.AllAreas))
             {
+                if (Vector3.Distance(hit.position, player.position) < minDistance)
+                    continue;
+
                 ZombieType type = DecideZombieType();
                 ZombiePool.Inst.Spawn(type, hit.position);
                 return;
             }
+
         }
     }
 
+
     ZombieType DecideZombieType()
     {
-        // 초반엔 Normal 위주 → 점점 Fast 증가
         int fastRate = Mathf.Clamp(difficultyLevel, 1, 5);
 
         if (normalCounter < fastRate)
@@ -105,16 +107,28 @@ public class ZombieSpawner : MonoBehaviour
         if (!player)
             return;
 
-        Vector3 dir = Random.insideUnitSphere;
-        dir.y = 0f;
-        dir.Normalize();
+        const float bossSpawnDist = 18f;
+        const int maxTry = 15;
 
-        Vector3 pos = player.position + dir * 18f;
-
-        if (NavMesh.SamplePosition(pos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
+        for (int i = 0; i < maxTry; i++)
         {
-            ZombiePool.Inst.SpawnBoss(hit.position);
+            Vector2 dir2D = Random.insideUnitCircle.normalized;
+            Vector3 spawnPos =
+                player.position + new Vector3(dir2D.x, 0f, dir2D.y) * bossSpawnDist;
+
+            if (NavMesh.SamplePosition(
+                spawnPos,
+                out NavMeshHit hit,
+                2.5f,
+                NavMesh.AllAreas))
+            {
+                ZombiePool.Inst.SpawnBoss(hit.position);
+                return;
+            }
         }
+
+        Debug.LogWarning("Boss spawn failed (NavMesh)");
     }
+
     #endregion
 }
