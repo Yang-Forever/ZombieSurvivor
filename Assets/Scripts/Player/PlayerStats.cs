@@ -66,7 +66,7 @@ public class PlayerStats : MonoBehaviour
 
     public void AddMagnetRange(float value)
     {
-        baseMagnetRange += value;
+        bonusMagnetRangeMultiplier += value;
     }
 
     public void AddHp(float value)
@@ -87,6 +87,18 @@ public class PlayerStats : MonoBehaviour
     public void AddPenetration(int value)
     {
         bonusPenetration += value;
+    }
+
+    public void ResetStats()
+    {
+        bonusDamageMultiplier = 0f;
+        bonusAttackSpeed = 0f;
+        bonusMoveSpeed = 0f;
+        bonusMagnetRangeMultiplier = 0f;
+        bonusMaxHp = 0f;
+        bonusReduction = 0f;
+        bonusPenetration = 0;
+        curHp = baseMaxHp;
     }
 
 }

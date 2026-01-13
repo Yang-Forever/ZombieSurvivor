@@ -10,6 +10,8 @@ TagManager:
   - House
   - Fence
   - Ground
+  - FxTemporaire
+  - Map
   layers:
   - Default
   - TransparentFX

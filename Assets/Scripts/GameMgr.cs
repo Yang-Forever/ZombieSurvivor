@@ -1,10 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Playables;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public enum PlayerState
 {
+    Tutorial,
     Play,
     LevelUp,
     Inventory,
@@ -43,18 +46,25 @@ public class GameMgr : MonoBehaviour
     float bossInterval = 240f;
     float nextBossTime = 760f;
 
-    public PlayerState state = PlayerState.Play;
+    [Header("Result Setting")]
+    public GameObject resultPanel;
+    public Text infoText;
+    public Text bestScoreText;
+    public Text updateScoreText;
+    public Button restart_Btn;
+    public Button goLobby_Btn;
+
+    [Header("Tutorial Setting")]
+    public GameObject tutorialPanel;
+    public Button tutoExit_Btn;
+
+    public PlayerState state = PlayerState.Tutorial;
 
     public static GameMgr Inst;
 
     private void Awake()
     {
-         Inst = this;
-
-        difficultyLevel = 0;
-        playTime = 900f;
-        score = 0;
-        killScore = 0;
+        Inst = this;
     }
 
     // Start is called before the first frame update
@@ -100,8 +110,26 @@ public class GameMgr : MonoBehaviour
                 Application.Quit();
             });
 
-        state = PlayerState.Play;
+        if (restart_Btn != null)
+            restart_Btn.onClick.AddListener(() =>
+            {
+                SceneManager.LoadScene("GameScene");
+            });
 
+        if (goLobby_Btn != null)
+            goLobby_Btn.onClick.AddListener(() =>
+            {
+                SceneManager.LoadScene("LobbyScene");
+            });
+
+        if (tutoExit_Btn != null)
+            tutoExit_Btn.onClick.AddListener(() =>
+            {
+                tutorialPanel.SetActive(false);
+                ChangeState(PlayerState.Play);
+            });
+
+        ResetGame();
         GameStart();
     }
 
@@ -119,12 +147,9 @@ public class GameMgr : MonoBehaviour
         CheckDifficulty();
         CheckBossSpawn();
 
-        if(playTime <= 0)
+        if (playTime <= 0)
         {
             state = PlayerState.GameEnd;
-
-            // 게임 종료 판넬 출력
-
         }
     }
 
@@ -133,6 +158,46 @@ public class GameMgr : MonoBehaviour
         ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);
 
         Gun.Inst.SetWeapon(weapon);
+    }
+
+    public void GameEnd()
+    {
+        ChangeState(PlayerState.GameEnd);
+
+        resultPanel.SetActive(true);
+
+        int survivedTime = Mathf.RoundToInt(900f - playTime);
+        int min = survivedTime / 60;
+        int sec = survivedTime % 60;
+
+        PlayerStats ps = PlayerStats.Inst;
+
+        infoText.text =
+            $"레벨 : {levelText.text}\n" +
+            $"공격력 배율 : {ps.DamageMultiplier:0.0}\n" +
+            $"공격속도 : {ps.AttackSpeed:0.00}\n" +
+            $"이동속도 : {ps.MoveSpeed:0.0}\n" +
+            $"자석범위 : {ps.MagnetRange:0.0}\n" +
+            $"체력 : {ps.MaxHp:0}\n" +
+            $"피해감소 : {(ps.DamageReduction * 100f):0}%\n" +
+            $"관통 : {ps.Penetration}\n\n" +
+            $"점수 : {score}\n" +
+            $"킬 : {killScore}\n" +
+            $"생존시간 : {min:00}:{sec:00}";
+
+        int bestScore = PlayerPrefs.GetInt("BestScore", 0);
+        bestScoreText.text = bestScore.ToString();
+
+        if (score > bestScore)
+        {
+            PlayerPrefs.SetInt("BestScore", score);
+            bestScoreText.text = "최고기록\n" + score;
+            updateScoreText.text = "최고기록 갱신!";
+        }
+        else
+        {
+            updateScoreText.text = "";
+        }
     }
 
     public void ChangeState(PlayerState newState)
@@ -145,6 +210,7 @@ public class GameMgr : MonoBehaviour
                 Time.timeScale = 1f;
                 break;
 
+            case PlayerState.Tutorial:
             case PlayerState.LevelUp:
             case PlayerState.Inventory:
             case PlayerState.Option:
@@ -178,6 +244,29 @@ public class GameMgr : MonoBehaviour
     {
         score += value + difficultyLevel * 10;
         killScore++;
+    }
+
+    void ResetGame()
+    {
+        playTime = 900f;
+        score = 0;
+        killScore = 0;
+
+        difficultyLevel = 0;
+        nextDifficultyTime = 840f;
+        nextBossTime = 760f;
+
+        PlayerStats.Inst.ResetStats();
+
+        Zombie_Ctrl.HpMultiplier = 1f;
+        Zombie_Ctrl.SpeedMultiplier = 1f;
+        Zombie_Ctrl.DamageMultiplier = 1f;
+
+        ZombieSpawner.Inst.ResetSpawner();
+
+        tutorialPanel.SetActive(true);
+
+        ChangeState(PlayerState.Tutorial);
     }
 
     public static bool IsPointerOverUIObject() //UGUI의 UI들이 먼저 피킹되는지 확인하는 함수

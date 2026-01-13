@@ -130,5 +130,11 @@ public class ZombieSpawner : MonoBehaviour
         Debug.LogWarning("Boss spawn failed (NavMesh)");
     }
 
+    public void ResetSpawner()
+    {
+        difficultyLevel = 0;
+        spawnPerSecond = 1.5f;
+    }
+
     #endregion
 }

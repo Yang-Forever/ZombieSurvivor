@@ -10,39 +10,17 @@ public class PlayerAnim_Ctrl : MonoBehaviour
         animator = GetComponent<Animator>();
     }
 
-    public void MoveAnim(float h, float v)
+    public void MoveAnim(float x, float z)
     {
-        ResetTrigger();
+        animator.SetFloat("MoveX", x);
+        animator.SetFloat("MoveZ", z);
 
-        if (v > 0.1f)
-            animator.SetTrigger("Move_F");
-        else if (v < -0.1f)
-            animator.SetTrigger("Move_B");
-        else if (h > 0.1f)
-            animator.SetTrigger("Move_R");
-        else if (h < -0.1f)
-            animator.SetTrigger("Move_L");
-        else
-            animator.SetTrigger("Stop");
-    }
-
-    void ResetTrigger()
-    {
-        animator.ResetTrigger("Move_F");
-        animator.ResetTrigger("Move_B");
-        animator.ResetTrigger("Move_L");
-        animator.ResetTrigger("Move_R");
-        animator.ResetTrigger("Stop");
-    }
-
-    public void ReloadAnim()
-    {
-        animator.SetTrigger("Reload");
+        float speed = new Vector2(x, z).magnitude;
+        animator.SetFloat("Speed", speed);
     }
 
     public void DieAnim()
     {
         animator.SetTrigger("Die");
     }
-
 }

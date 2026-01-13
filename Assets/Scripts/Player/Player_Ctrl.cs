@@ -1,5 +1,5 @@
+using System.Collections;
 using UnityEngine;
-using UnityEngine.Playables;
 using UnityEngine.UI;
 
 public class Player_Ctrl : MonoBehaviour
@@ -98,10 +98,15 @@ public class Player_Ctrl : MonoBehaviour
         {
             PlayerStats.Inst.curHp = 0;
 
-            // 게임 종료
-            GameMgr.Inst.state = PlayerState.GameEnd;
-            Time.timeScale = 0;
+            playerAnim.DieAnim();
+
+            StartCoroutine(Die());
         }
+    }
+    IEnumerator Die()
+    {
+        yield return new WaitForSeconds(3f);
+        GameMgr.Inst.GameEnd();
     }
 
     public void AddExp(int value)
