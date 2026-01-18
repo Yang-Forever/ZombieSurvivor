@@ -1,12 +1,11 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.AI;
 
 public enum ZombieType
 {
     Normal,
-    Fast,
+    Explosion,
     Boss,
     None
 }
@@ -26,6 +25,10 @@ public class Zombie_Ctrl : MonoBehaviour
     float moveSpeed;
     int damage;
 
+    [SerializeField] float moveSpeed2 = 3f;
+    [SerializeField] float stopDistance = 1.6f;
+    [SerializeField] float personalSpace = 0.9f;
+
     [Header("Multiplier")]
     public static float NormalHpMul = 1f;
     public static float NormalSpeedMul = 1f;
@@ -38,22 +41,33 @@ public class Zombie_Ctrl : MonoBehaviour
     private float atkRange = 2.0f;
     private float atkCool = 1.0f;
     float atkTimer = 0.0f;
+    bool isAttack = false;
 
     // 현재 상태
+    private ZombiePool pool;
     AnimState state = AnimState.idle;
     [HideInInspector] public AnimState curState = AnimState.idle;
     [HideInInspector] public bool isDead = false;
     bool hasAttacked = false;
+
+    // 타겟(플레이어) 참조
+    public Transform target;
     Player_Ctrl player;
 
     // 애니메이션
     public Anim anim;
     Animator animator = null;
 
-    public Transform target;
-    NavMeshAgent agent;
+    // 이동
+    [SerializeField] LayerMask zombieLayer;
+    Rigidbody rb;
+    bool wasBlockedLastFrame = false;
 
-    private ZombiePool pool;
+    bool isInit = false;
+
+    [Header("Bomb Zombie State")]
+    public GameObject explodeEffect;
+    bool isExplosion = false;
 
     [Header("Boss State")]
     public Transform dashLine;
@@ -80,11 +94,25 @@ public class Zombie_Ctrl : MonoBehaviour
     // 거리 조건
     float SkillRange = 8f;
 
+    // 피격 관련
+    Renderer[] renderers;
+    MaterialPropertyBlock mpb;
+    Coroutine hitCo;
+
+    Color baseColor;
+    Color hitColor = Color.red;
+
+
     private void Awake()
     {
-        agent = GetComponent<NavMeshAgent>();
         animator = GetComponentInChildren<Animator>();
-        //ZombieSetUp();
+        rb = GetComponent<Rigidbody>();
+
+        renderers = GetComponentsInChildren<SkinnedMeshRenderer>();
+        mpb = new MaterialPropertyBlock();
+
+        if (renderers.Length > 0)
+            baseColor = renderers[0].sharedMaterial.GetColor("_Color");
     }
 
     public void SetPool(ZombiePool p)
@@ -102,6 +130,9 @@ public class Zombie_Ctrl : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (!isInit)
+            return;
+
         if (isDead)
             return;
 
@@ -109,8 +140,10 @@ public class Zombie_Ctrl : MonoBehaviour
             atkTimer -= Time.deltaTime;
 
         if (zomType == ZombieType.Boss)
-            BossUpdate();
-        else
+            BossMove();
+        else if (zomType == ZombieType.Explosion)
+            BombZombieMove();
+        else if (zomType == ZombieType.Normal)
             ZombieMove();
     }
 
@@ -127,12 +160,12 @@ public class Zombie_Ctrl : MonoBehaviour
                 }
                 break;
 
-            case ZombieType.Fast:   // 속도(이동속도)가 빠른 좀비
+            case ZombieType.Explosion:
                 {
                     baseHp = 40f;
-                    baseMoveSpeed = 4.0f;
-                    baseDamage = 10;
-                    atkRange = 2f;
+                    baseMoveSpeed = 5.0f;
+                    baseDamage = 30;
+                    atkRange = 1f;
                 }
                 break;
 
@@ -166,78 +199,186 @@ public class Zombie_Ctrl : MonoBehaviour
     }
 
     #region Zombie Action
-    //void ZombieMove()
-    //{
-    //    if (isDead)
-    //        return;
-
-    //    if (state == AnimState.attack)
-    //        return;
-
-    //    if (state == AnimState.rage)
-    //        return;
-
-    //    Vector3 dir = target.position - transform.position;
-    //    dir.y = 0;
-
-    //    float dist = dir.magnitude;
-
-    //    if (!player.isDie)
-    //    {
-    //        if (dist > atkRange)
-    //        {
-    //            dir.Normalize();
-    //            transform.forward = dir;
-    //            transform.position += dir * moveSpeed * Time.deltaTime;
-
-    //            ChangeAnim(AnimState.trace, 0.12f);
-    //        }
-    //        else
-    //        {
-    //            // 좀비 공격
-    //            ZombieAttack();
-
-    //        }
-    //    }
-    //    else
-    //    {
-    //        ChangeAnim(AnimState.idle, 0.12f);
-    //    }
-    //}
 
     void ZombieMove()
     {
-        if (isDead || player.isDie)
+        if (state == AnimState.attack)
             return;
 
-        float dist = Vector3.Distance(transform.position, target.position);
+        Vector3 toPlayer = target.position - transform.position;
+        toPlayer.y = 0f;
 
-        if (dist > atkRange)
+        float dist = toPlayer.magnitude;
+        if (dist < 0.01f)
+            return;
+
+        Vector3 dir = toPlayer.normalized;
+
+        if (dist <= atkRange)
         {
-            if (!agent.hasPath || Vector3.Distance(agent.destination, target.position) > 0.5f)
-            {
-                agent.SetDestination(target.position);
-            }
-
-            // 이동 방향으로 회전
-            Vector3 vel = agent.velocity;
-            vel.y = 0f;
-
-            if (vel.sqrMagnitude > 0.01f)
-                transform.forward = vel.normalized;
-
-            ChangeAnim(AnimState.trace, 0.12f);
-        }
-        else
-        {
-            agent.ResetPath();
             ZombieAttack();
+            return;
         }
+
+        bool isBlocked = IsBlockedByFrontZombie(dir);
+
+        if (wasBlockedLastFrame && !isBlocked)
+        {
+            dir = ApplyReleaseBias(dir);
+        }
+
+        wasBlockedLastFrame = isBlocked;
+
+        if (isBlocked)
+        {
+            ChangeAnim(AnimState.idle, 0.1f);
+            return;
+        }
+
+        transform.position += dir * moveSpeed * Time.deltaTime;
+        transform.forward = dir;
+
+        ChangeAnim(AnimState.trace, 0.12f);
+    }
+
+
+    Vector3 ApplyReleaseBias(Vector3 dir)
+    {
+        // 좌/우 중 랜덤
+        Vector3 side = Vector3.Cross(Vector3.up, dir);
+        float sign = Random.value < 0.5f ? -1f : 1f;
+
+        float biasStrength = 0.25f;
+
+        Vector3 newDir = (dir + side * sign * biasStrength).normalized;
+        return newDir;
+    }
+
+
+    bool IsBlockedByFrontZombie(Vector3 moveDir)
+    {
+        // Normal만 차단 로직 사용
+        if (zomType != ZombieType.Normal)
+            return false;
+
+        Collider[] cols = Physics.OverlapCapsule(
+            transform.position + Vector3.up * 0.5f,
+            transform.position + Vector3.up * 1.5f,
+            0.4f,
+            zombieLayer
+        );
+
+        float myDist = Vector3.Distance(transform.position, target.position);
+
+        foreach (var col in cols)
+        {
+            if (col.attachedRigidbody == rb)
+                continue;
+
+            Zombie_Ctrl other = col.GetComponent<Zombie_Ctrl>();
+            if (other == null || other.isDead)
+                continue;
+
+            if (other.zomType != ZombieType.Normal)
+                continue;
+
+            float otherDist = Vector3.Distance(other.transform.position, target.position);
+
+            if (otherDist < myDist)
+            {
+                Vector3 toOther =
+                    (other.transform.position - transform.position).normalized;
+
+                if (Vector3.Dot(moveDir, toOther) > 0.3f)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    void BombZombieMove()
+    {
+        if (isDead || isExplosion)
+            return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        float dist = dir.magnitude;
+        if (dist < 0.01f)
+            return;
+
+        dir.Normalize();
+
+        if (dist <= atkRange)
+        {
+            Explosion();
+            return;
+        }
+
+        transform.position += dir * moveSpeed * Time.deltaTime;
+        transform.forward = dir;
+        PushThroughZombies(dir);
+
+        ChangeAnim(AnimState.trace, 0.12f);
+    }
+
+    void PushThroughZombies(Vector3 moveDir)
+    {
+        float radius = 0.45f;
+        float pushPower = 0.04f;
+
+        Collider[] hits = Physics.OverlapCapsule(
+            transform.position + Vector3.up * 0.5f,
+            transform.position + Vector3.up * 1.5f,
+            radius,
+            zombieLayer
+        );
+
+        foreach (var hit in hits)
+        {
+            Zombie_Ctrl z = hit.GetComponentInParent<Zombie_Ctrl>();
+            if (z == null || z.isDead)
+                continue;
+
+            if (z.zomType != ZombieType.Normal)
+                continue;
+
+            Vector3 toZombie = (z.transform.position - transform.position);
+            toZombie.y = 0f;
+
+            if (Vector3.Dot(moveDir, toZombie.normalized) < 0.2f)
+                continue;
+
+            z.transform.position += moveDir * pushPower;
+        }
+    }
+
+    void Explosion()
+    {
+        if (isExplosion)
+            return;
+
+        isExplosion = true;
+        isDead = true;
+
+        Sound_Mgr.Inst.PlayEffSoundLimit("ZombieExplosion", 1.0f, 0.1f);
+
+        if (player != null)
+            player.HitDamage(damage);
+
+        // 폭발 이펙트 추가
+        GameObject efx = Instantiate(explodeEffect, transform.position, Quaternion.identity);
+        Destroy(efx, 0.3f);
+
+        pool.ReturnZombie(this);
     }
 
     void ZombieAttack()
     {
-        if (isDashing || isChargingDash)
+        if (state == AnimState.attack)
             return;
 
         if (atkTimer > 0f)
@@ -246,32 +387,36 @@ public class Zombie_Ctrl : MonoBehaviour
         atkTimer = atkCool;
         hasAttacked = false;
 
+        state = AnimState.attack;
+        curState = AnimState.attack;
+
         ChangeAnim(AnimState.attack, 0.12f);
     }
 
     public void OnAtkHit()
     {
+        if (state != AnimState.attack)
+            return;
+
         if (hasAttacked || isDead || player == null)
             return;
 
         float dist = Vector3.Distance(transform.position, player.transform.position);
-        if (dist > atkRange)
+        if (dist > atkRange + 0.2f)
             return;
 
         Vector3 dirToPlayer = (player.transform.position - transform.position).normalized;
-        float dot = Vector3.Dot(transform.forward, dirToPlayer);
-
-        if (dot < 0.5f)
+        if (Vector3.Dot(transform.forward, dirToPlayer) < 0.3f)
             return;
 
         hasAttacked = true;
-        if (player != null)
-            player.HitDamage(damage);
+        player.HitDamage(damage);
     }
 
     public void OnAttackEnd()
     {
-        ChangeAnim(AnimState.trace, 0.12f);
+        state = AnimState.trace;
+        curState = AnimState.trace;
     }
 
     void ChangeAnim(AnimState newState, float crossTime = 0.0f)
@@ -299,41 +444,36 @@ public class Zombie_Ctrl : MonoBehaviour
     #endregion
 
     #region Boss Action
-    void BossUpdate()
+    void BossMove()
     {
-        float dist = Vector3.Distance(transform.position, target.position);
-
-        // 대쉬 중
         if (isDashing)
         {
             DashUpdate();
             return;
         }
 
-        // 대쉬 차징 중
         if (isChargingDash)
         {
             DashChargeUpdate();
             return;
         }
 
-        // 기본 이동
         ZombieMove();
 
-        // 스킬 범위 안에서만 패턴 카운트
+        float dist = Vector3.Distance(transform.position, target.position);
+
         if (dist <= SkillRange)
         {
             patternTimer -= Time.deltaTime;
-
             if (patternTimer <= 0f)
                 StartDashCharge();
         }
         else
         {
-            // 멀어지면 쿨타임 리셋
             patternTimer = patternCool;
         }
     }
+
 
     void StartDashCharge()
     {
@@ -374,17 +514,6 @@ public class Zombie_Ctrl : MonoBehaviour
         dashCanvas.gameObject.SetActive(false);
         dashHitBox.SetActive(true);
 
-        NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent == true)
-        {
-            agent.isStopped = true;
-            agent.updatePosition = false;
-            agent.updateRotation = false;
-            agent.obstacleAvoidanceType = ObstacleAvoidanceType.NoObstacleAvoidance;
-            agent.velocity = Vector3.zero;
-            agent.avoidancePriority = 0;
-        }
-
         gameObject.layer = LayerMask.NameToLayer("BossDash");
 
         ChangeAnim(AnimState.dash, 0.12f);
@@ -405,17 +534,6 @@ public class Zombie_Ctrl : MonoBehaviour
         isDashing = false;
         dashHitBox.SetActive(false);
 
-        NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        if (agent)
-        {
-            agent.Warp(transform.position);
-            agent.isStopped = false;
-            agent.updatePosition = true;
-            agent.updateRotation = true;
-            agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
-            agent.avoidancePriority = 10;
-        }
-
         gameObject.layer = LayerMask.NameToLayer("Zombie");
 
         ChangeAnim(AnimState.trace, 0.12f);
@@ -429,6 +547,8 @@ public class Zombie_Ctrl : MonoBehaviour
             return;
 
         currHp -= damage;
+
+        HitEffect();
 
         if (currHp <= 0)
         {
@@ -448,12 +568,33 @@ public class Zombie_Ctrl : MonoBehaviour
                 StartCoroutine(Die());
             }
         }
-        else
-        {
-            if (state == AnimState.attack || state == AnimState.dash || state == AnimState.rage)
-                return;
 
-            ChangeAnim(AnimState.hit, 0.12f);
+    }
+
+    void HitEffect()
+    {
+        if (hitCo != null)
+            StopCoroutine(hitCo);
+
+        hitCo = StartCoroutine(HitEffectCo());
+    }
+
+    IEnumerator HitEffectCo()
+    {
+        Hit(1f);
+        yield return new WaitForSeconds(0.05f);
+        Hit(0f);
+    }
+
+    void Hit(float v)
+    {
+        Color col = Color.Lerp(baseColor, hitColor, v);
+
+        foreach (var r in renderers)
+        {
+            r.GetPropertyBlock(mpb);
+            mpb.SetColor("_Color", col);
+            r.SetPropertyBlock(mpb);
         }
     }
 
@@ -476,12 +617,7 @@ public class Zombie_Ctrl : MonoBehaviour
         if (col)
             col.enabled = false;
 
-        // 4. 네비게이션 매쉬 비활성화
-        NavMeshAgent nav = GetComponent<NavMeshAgent>();
-        if (nav)
-            nav.enabled = false;
-
-        // 5. 삭제
+        // 4. 삭제
         yield return new WaitForSeconds(3f);
 
         pool.ReturnZombie(this);
@@ -499,10 +635,6 @@ public class Zombie_Ctrl : MonoBehaviour
         if (col)
             col.enabled = false;
 
-        NavMeshAgent nav = GetComponent<NavMeshAgent>();
-        if (nav)
-            nav.enabled = false;
-
         yield return new WaitForSeconds(3f);
 
         Destroy(gameObject);
@@ -514,37 +646,33 @@ public class Zombie_Ctrl : MonoBehaviour
         ApplyDifficultyStat();
 
         isDead = false;
-        atkTimer = 0.0f;
+        isExplosion = false;
+        atkTimer = 0f;
         hasAttacked = false;
+
+        ChangeAnim(AnimState.idle);
 
         if (zomType == ZombieType.Boss)
         {
             isChargingDash = false;
             isDashing = false;
-
             dashCanvas.gameObject.SetActive(false);
             patternTimer = patternCool;
         }
 
-        ChangeAnim(AnimState.idle);
-        state = AnimState.idle;
-        curState = AnimState.idle;
-
         Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb != null) rb.isKinematic = false;
+        if (rb)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = false;
+        }
 
         Collider col = GetComponent<Collider>();
-        if (col != null) col.enabled = true;
+        if (col)
+            col.enabled = true;
 
-        if (agent != null)
-        {
-            agent.enabled = true;
-            agent.speed = moveSpeed;
-            agent.stoppingDistance = atkRange - 0.1f;
-            agent.updateRotation = false;
-            agent.updateUpAxis = false;
-            agent.ResetPath();
-        }
+        isInit = true;
     }
 
     void SpawnExp(int value)
@@ -567,9 +695,7 @@ public class Zombie_Ctrl : MonoBehaviour
         if (!isDashing)
             return;
 
-        if (collision.gameObject.CompareTag("Wall") ||
-            collision.gameObject.CompareTag("House") ||
-            collision.gameObject.CompareTag("Fence"))
+        if (collision.gameObject.CompareTag("Wall"))
         {
             EndDash();
         }

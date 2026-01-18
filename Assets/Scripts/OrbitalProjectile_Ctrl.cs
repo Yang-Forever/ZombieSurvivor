@@ -24,6 +24,7 @@ public class OrbitalProjectile_Ctrl : MonoBehaviour
 
     void Explosion()
     {
+        Sound_Mgr.Inst.PlayEffSoundLimit("OrbitalCall", 0.8f, 0.3f);
         Instantiate(explosionPrefab, targetPos, Quaternion.identity);
         Destroy(gameObject);
     }

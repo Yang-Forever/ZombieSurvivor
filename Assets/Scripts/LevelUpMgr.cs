@@ -55,6 +55,7 @@ public class LevelUpMgr : MonoBehaviour
     {
         lvPanel.SetActive(false);
         GameMgr.Inst.ChangeState(PlayerState.Play);
+        Sound_Mgr.Inst.ResumeBGM();
     }
 
     List<ItemRuntimeData> GetRandomItem(int count)

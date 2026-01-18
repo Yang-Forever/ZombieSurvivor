@@ -40,7 +40,9 @@ public class Fire_Ctrl : MonoBehaviour
 
         if (Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject())
         {
-            if(data.baseData.itemName == "Shotgun")
+            Sound_Mgr.Inst.PlayEffSoundLimit("Shot", 0.6f, 0.08f);
+
+            if (data.baseData.itemName == "Shotgun")
             {
                 SpreadFire();
             }

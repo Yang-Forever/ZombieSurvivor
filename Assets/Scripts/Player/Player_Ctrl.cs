@@ -41,8 +41,8 @@ public class Player_Ctrl : MonoBehaviour
         // 수동회전
         RotateMouse();
 
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-            LevelUp();
+        //if (Input.GetKeyDown(KeyCode.Alpha2))
+        //    LevelUp();
     }
 
     void MoveKB()
@@ -51,13 +51,23 @@ public class Player_Ctrl : MonoBehaviour
         h = Input.GetAxis("Horizontal");
         v = Input.GetAxis("Vertical");
 
-        Vector3 moveDir = new Vector3(h, 0.0f, v);
-        if (moveDir.magnitude > 1.0f)
-            moveDir.Normalize();
+        Vector3 inputDir = new Vector3(h, 0f, v);
+        if (inputDir.sqrMagnitude < 0.01f)
+        {
+            playerAnim.MoveAnim(0, 0);
+            return;
+        }
 
-        transform.position += moveDir * PlayerStats.Inst.MoveSpeed * Time.deltaTime;
+        inputDir.Normalize();
 
-        Vector3 localMoveDir = transform.InverseTransformDirection(moveDir);
+        float moveDist = PlayerStats.Inst.MoveSpeed * Time.deltaTime;
+
+        if (CanMove(inputDir))
+        {
+            transform.position += inputDir * moveDist;
+        }
+
+        Vector3 localMoveDir = transform.InverseTransformDirection(inputDir);
         playerAnim.MoveAnim(localMoveDir.x, localMoveDir.z);
     }
 
@@ -83,6 +93,41 @@ public class Player_Ctrl : MonoBehaviour
             transform.forward = dir.normalized;
         }
     }
+
+    bool CanMove(Vector3 moveDir)
+    {
+        float radius = 0.3f;
+        float height = 1.4f;
+
+        Vector3 pos = transform.position;
+
+        Collider[] hits = Physics.OverlapCapsule(
+            pos + Vector3.up * 0.4f,
+            pos + Vector3.up * (height - 0.2f),
+            radius,
+            LayerMask.GetMask("NormalZombie", "BossZombie")
+        );
+
+        int weightSum = 0;
+
+        foreach (var hit in hits)
+        {
+            Zombie_Ctrl z = hit.GetComponentInParent<Zombie_Ctrl>();
+            if (z == null || z.isDead)
+                continue;
+
+            if (z.zomType == ZombieType.Explosion)
+                continue;
+
+            if (z.zomType == ZombieType.Normal)
+                weightSum += 1;
+            else if (z.zomType == ZombieType.Boss)
+                weightSum += 3;
+        }
+
+        return weightSum <= 4;
+    }
+
 
     public void HitDamage(int damage)
     {
@@ -137,6 +182,9 @@ public class Player_Ctrl : MonoBehaviour
 
     void LevelUp()
     {
+        Sound_Mgr.Inst.StopBGM();
+        Sound_Mgr.Inst.PlayEffSound("LevelUp", 0.8f);
+
         curExp -= maxExp;
         level++;
         curExp = 0;

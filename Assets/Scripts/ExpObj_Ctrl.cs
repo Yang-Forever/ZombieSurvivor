@@ -1,5 +1,3 @@
-    using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ExpObj_Ctrl : MonoBehaviour
@@ -64,7 +62,7 @@ public class ExpObj_Ctrl : MonoBehaviour
         {
             //ÇÃ·¹ÀÌ¾î Exp È×µæ
             coll.GetComponent<Player_Ctrl>().AddExp(expValue);
-
+            Sound_Mgr.Inst.PlayEffSoundLimit("ExpHit", 0.5f, 0.05f);
             ExpEffectPool.Inst.PlayEffect(transform.position);
 
             ExpPool.Inst.ReturnExp(this);

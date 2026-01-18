@@ -9,7 +9,7 @@ public class Explosion_Ctrl : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius, LayerMask.GetMask("Zombie"));
+        Collider[] hits = Physics.OverlapSphere(transform.position, radius, LayerMask.GetMask("NormalZombie", "ExplosionZombie", "BossZombie"));
 
         foreach (var col in hits)
         {

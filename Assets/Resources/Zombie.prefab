@@ -9,10 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1740283486846379112}
+  - component: {fileID: 4133215744507242010}
+  - component: {fileID: 2374881320910909571}
   - component: {fileID: 6823248746420520453}
-  - component: {fileID: 8941851277988077332}
-  - component: {fileID: 2655598490681278536}
-  - component: {fileID: 7319043717254474208}
   m_Layer: 6
   m_Name: Zombie
   m_TagString: Zombie
@@ -36,38 +35,7 @@ Transform:
   - {fileID: 5695371055963062050}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6823248746420520453
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8991566801663535134}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59f2855800e501e4481e9e66c3742389, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  zomType: 0
-  baseHp: 0
-  baseMoveSpeed: 0
-  baseDamage: 0
-  curState: 0
-  isDead: 0
-  anim:
-    Idle: {fileID: 7400000, guid: 9d64135e30478c04d804134715c08e92, type: 2}
-    Move: {fileID: 7400000, guid: 512692aaf06d34c4799f8f3eada4c0b7, type: 2}
-    Attack: {fileID: 7400000, guid: e9312d75d6c70d146bb4c07327ae4922, type: 2}
-    Hit: {fileID: 7400000, guid: eb9c2b0a9b6c038439bad1d708d6ee7b, type: 2}
-    Rage: {fileID: 0}
-    Dash: {fileID: 0}
-    Die: {fileID: 7400000, guid: 5e82af75ee03dd74f9b5d7eeb2ade817, type: 2}
-  target: {fileID: 0}
-  dashLine: {fileID: 0}
-  dashCanvas: {fileID: 0}
-  dashFill: {fileID: 0}
-  dashHitBox: {fileID: 0}
---- !u!54 &8941851277988077332
+--- !u!54 &4133215744507242010
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -76,8 +44,8 @@ Rigidbody:
   m_GameObject: {fileID: 8991566801663535134}
   serializedVersion: 4
   m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
+  m_Drag: 4
+  m_AngularDrag: 999
   m_CenterOfMass: {x: 0, y: 0, z: 0}
   m_InertiaTensor: {x: 1, y: 1, z: 1}
   m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -89,13 +57,13 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 4
-  m_CollisionDetection: 0
---- !u!65 &2655598490681278536
-BoxCollider:
+  m_Interpolate: 1
+  m_Constraints: 84
+  m_CollisionDetection: 1
+--- !u!136 &2374881320910909571
+CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -112,31 +80,48 @@ BoxCollider:
   m_IsTrigger: 0
   m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1.1, y: 1.8, z: 0.5}
+  serializedVersion: 2
+  m_Radius: 0.4
+  m_Height: 1.8
+  m_Direction: 1
   m_Center: {x: 0, y: 0.95, z: 0}
---- !u!195 &7319043717254474208
-NavMeshAgent:
+--- !u!114 &6823248746420520453
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8991566801663535134}
   m_Enabled: 1
-  m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3
-  m_Acceleration: 1000
-  avoidancePriority: 51
-  m_AngularSpeed: 1000
-  m_StoppingDistance: 2
-  m_AutoTraverseOffMeshLink: 1
-  m_AutoBraking: 1
-  m_AutoRepath: 1
-  m_Height: 1.8
-  m_BaseOffset: -0.1
-  m_WalkableMask: 4294967295
-  m_ObstacleAvoidanceType: 4
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f2855800e501e4481e9e66c3742389, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  zomType: 0
+  baseHp: 0
+  baseMoveSpeed: 0
+  baseDamage: 0
+  moveSpeed2: 3
+  stopDistance: 1.6
+  personalSpace: 0.9
+  curState: 0
+  isDead: 0
+  target: {fileID: 0}
+  anim:
+    Idle: {fileID: 7400000, guid: 9d64135e30478c04d804134715c08e92, type: 2}
+    Move: {fileID: 7400000, guid: 512692aaf06d34c4799f8f3eada4c0b7, type: 2}
+    Attack: {fileID: 7400000, guid: e9312d75d6c70d146bb4c07327ae4922, type: 2}
+    Rage: {fileID: 0}
+    Dash: {fileID: 0}
+    Die: {fileID: 7400000, guid: 5e82af75ee03dd74f9b5d7eeb2ade817, type: 2}
+  zombieLayer:
+    serializedVersion: 2
+    m_Bits: 960
+  explodeEffect: {fileID: 0}
+  dashLine: {fileID: 0}
+  dashCanvas: {fileID: 0}
+  dashFill: {fileID: 0}
+  dashHitBox: {fileID: 0}
 --- !u!1001 &5700290575968625646
 PrefabInstance:
   m_ObjectHideFlags: 0

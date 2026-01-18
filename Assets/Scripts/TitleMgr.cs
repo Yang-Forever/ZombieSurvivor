@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class TitleMgr : MonoBehaviour
@@ -19,33 +18,41 @@ public class TitleMgr : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // 타이틀 브금
+        //Sound_Mgr.Inst.PlayBGM("BGM_Title", 0.2f);
+
         if (gameStart_Btn != null)
             gameStart_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 FadeMgr.Inst.LoadScene("GameScene");
             });
 
         if (config_Btn != null)
             config_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configPanel.SetActive(true);
             });
 
         if (quitGame_Btn != null)
             quitGame_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 Application.Quit();
             });
 
         if (configClose_Btn != null)
             configClose_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configPanel.SetActive(false);
             });
 
         if (tutorial_Btn != null)
             tutorial_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configPanel.SetActive(false);
                 tutorialPanel.SetActive(true);
             });
@@ -53,14 +60,14 @@ public class TitleMgr : MonoBehaviour
         if (tutoExit_Btn != null)
             tutoExit_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configPanel.SetActive(true);
                 tutorialPanel.SetActive(false);
             });
     }
 
-    // Update is called once per frame
-    void Update()
+    void PlayClick()
     {
-        
+        Sound_Mgr.Inst.PlayGUISound("UI_Click", 0.4f);
     }
 }

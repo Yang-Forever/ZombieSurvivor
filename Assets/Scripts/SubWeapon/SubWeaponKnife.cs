@@ -34,6 +34,8 @@ public class SubWeaponKnife : SubWeaponBase
             return;
         }
 
+        Sound_Mgr.Inst.PlayEffSoundLimit("Knife", 0.7f, 0.1f);
+
         // ¿Ã∆Â∆Æ
         GameObject effect = Instantiate(knifeEffect, playerTr.position, Quaternion.identity, transform);
         Destroy(effect, 1f);

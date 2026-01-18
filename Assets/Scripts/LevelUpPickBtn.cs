@@ -28,6 +28,7 @@ public class LevelUpPickBtn : MonoBehaviour
 
     public void OnClick()
     {
+        Sound_Mgr.Inst.PlayGUISound("UI_Click", 0.4f);
         LevelUpMgr.Inst.SelectItem(itemData);
     }
 }

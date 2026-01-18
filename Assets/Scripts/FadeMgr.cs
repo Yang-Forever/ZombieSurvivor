@@ -45,6 +45,8 @@ public class FadeMgr : MonoBehaviour
 
         yield return Fade(0f, 1f);
 
+        Sound_Mgr.Inst.StopBGM();
+
         loading.SetActive(true);
         AsyncOperation op = SceneManager.LoadSceneAsync(sceneName);
         op.allowSceneActivation = false;
@@ -65,6 +67,8 @@ public class FadeMgr : MonoBehaviour
 
         yield return Fade(1f, 0f);
 
+        PlaySceneBGM(sceneName);
+
         blockPanel.gameObject.SetActive(false);
         isTransition = false;
     }
@@ -84,4 +88,19 @@ public class FadeMgr : MonoBehaviour
 
         fadeImg.color = new Color(c.r, c.g, c.b, to);
     }
+
+    void PlaySceneBGM(string sceneName)
+    {
+        switch (sceneName)
+        {
+            case "TitleScene":
+                Sound_Mgr.Inst.PlayBGM("BGM_Title", 0.2f);
+                break;
+
+            case "GameScene":
+                Sound_Mgr.Inst.PlayBGM("BGM_Game", 0.2f);
+                break;
+        }
+    }
+
 }

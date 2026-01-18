@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.AI;
 
 public class ZombieSpawner : MonoBehaviour
 {
@@ -10,15 +9,22 @@ public class ZombieSpawner : MonoBehaviour
     public float spawnPerSecond = 1.5f;
     float spawnTimer;
 
-    [Header("Spawn Area")]
-    float spawnRadius = 20f;
-    float minDistance = 15f;
+    [Header("Spawn Distance")]
+    public float minDistance = 12f;   // 원 안쪽 금지
+    public float maxDistance = 17f;   // 원 안쪽 금지
+
+    [Header("Map Bounds")]
+    public BoxCollider mapBounds;     // 맵 전체 영역
 
     [Header("Difficulty")]
     public int difficultyLevel = 0;
     int normalCounter = 0;
 
-    public static ZombieSpawner Inst = null;
+    [Header("BombZombie Rate")]
+    int spawnCount = 0;
+    int nextBombAt = 0;
+
+    public static ZombieSpawner Inst;
 
     private void Awake()
     {
@@ -26,6 +32,8 @@ public class ZombieSpawner : MonoBehaviour
 
         if (player == null)
             player = GameObject.Find("Player").transform;
+
+        ResetBombCounter();
     }
 
     void Update()
@@ -34,7 +42,6 @@ public class ZombieSpawner : MonoBehaviour
             return;
 
         spawnTimer += Time.deltaTime;
-
         float interval = 1f / spawnPerSecond;
 
         if (spawnTimer >= interval)
@@ -43,89 +50,106 @@ public class ZombieSpawner : MonoBehaviour
             SpawnZombie();
         }
     }
+    void ResetBombCounter()
+    {
+        spawnCount = 0;
+        nextBombAt = Random.Range(10, 16); // 10~15
+    }
 
-    #region 스폰 로직
     void SpawnZombie()
     {
-        if (!player) 
+        if (!player || !mapBounds)
             return;
 
-        const int maxTry = 30;
+        if (!TryGetSpawnPosAroundPlayer(out Vector3 spawnPos))
+            return;
 
-        for (int i = 0; i < maxTry; i++)
-        {
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float dist = Random.Range(minDistance, spawnRadius);
-
-            Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            Vector3 rawPos = player.position + dir * dist;
-
-            if (NavMesh.SamplePosition(rawPos, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            {
-                ZombiePool.Inst.Spawn(DecideZombieType(), hit.position);
-                return;
-            }
-        }
+        ZombiePool.Inst.Spawn(DecideZombieType(), spawnPos);
     }
 
     ZombieType DecideZombieType()
     {
-        int fastRate = Mathf.Clamp(difficultyLevel, 1, 5);
+        spawnCount++;
 
-        if (normalCounter < fastRate)
+        if (spawnCount >= nextBombAt)
         {
-            normalCounter++;
-            return ZombieType.Normal;
+            ResetBombCounter();
+            return ZombieType.Explosion;
         }
-        else
-        {
-            normalCounter = 0;
-            return ZombieType.Fast;
-        }
+
+        return ZombieType.Normal;
     }
 
     public void IncreaseDifficulty(int level)
     {
         difficultyLevel = level;
 
-        // 전역 스텟 배율
         Zombie_Ctrl.NormalHpMul = 1f + level * 0.1f;
         Zombie_Ctrl.NormalSpeedMul = 1f + level * 0.05f;
         Zombie_Ctrl.NormalDmgMul = 1f + level * 0.1f;
 
-        // 스폰량 증가
         spawnPerSecond = 1.5f + level * 0.5f;
     }
 
     public void SpawnBoss(int bossLevel)
     {
-        if (!player)
+        if (!player || !mapBounds)
             return;
+
         IncreaseBossDifficulty(bossLevel);
 
-        const float bossSpawnDist = 18f;
-        const int maxTry = 15;
+        float prevMin = minDistance;
+        float prevMax = maxDistance;
 
-        for (int i = 0; i < maxTry; i++)
+        minDistance = 15f;
+        maxDistance = 22f;
+
+        if (!TryGetSpawnPosAroundPlayer(out Vector3 spawnPos))
         {
-            Vector2 dir2D = Random.insideUnitCircle.normalized;
-            Vector3 spawnPos = player.position + new Vector3(dir2D.x, 0f, dir2D.y) * bossSpawnDist;
-
-            if (NavMesh.SamplePosition(spawnPos, out NavMeshHit hit, 2.5f, NavMesh.AllAreas))
-            {
-                ZombiePool.Inst.SpawnBoss(hit.position);
-                return;
-            }
+            minDistance = prevMin;
+            maxDistance = prevMax;
+            return;
         }
+
+        minDistance = prevMin;
+        maxDistance = prevMax;
+
+        ZombiePool.Inst.SpawnBoss(spawnPos);
     }
+
 
     public void IncreaseBossDifficulty(int level)
     {
-        // 전역 스텟 배율
         Zombie_Ctrl.BossHpMul = 1f + level * 0.5f;
         Zombie_Ctrl.BossSpeedMul = 1f + level * 0.05f;
         Zombie_Ctrl.BossDmgMul = 1f + level * 0.1f;
     }
+    bool TryGetSpawnPosAroundPlayer(out Vector3 result)
+    {
+        const int maxTry = 30;
+        Bounds b = mapBounds.bounds;
+
+        for (int i = 0; i < maxTry; i++)
+        {
+            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
+            Vector3 dir = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+
+            float dist = Random.Range(minDistance, maxDistance);
+            Vector3 pos = player.position + dir * dist;
+            pos.y = 0f;
+
+            if (pos.x < b.min.x || pos.x > b.max.x ||
+                pos.z < b.min.z || pos.z > b.max.z)
+                continue;
+
+            result = pos;
+            return true;
+        }
+
+        result = Vector3.zero;
+        return false;
+    }
+
 
     public void ResetSpawner()
     {
@@ -133,5 +157,4 @@ public class ZombieSpawner : MonoBehaviour
         spawnPerSecond = 1.5f;
     }
 
-    #endregion
 }

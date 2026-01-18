@@ -1,8 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Playables;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public enum PlayerState
@@ -80,6 +78,8 @@ public class GameMgr : MonoBehaviour
                 if (state != PlayerState.Play)
                     return;
 
+                PlayClick();
+
                 configPanel.SetActive(true);
                 ChangeState(PlayerState.Option);
             });
@@ -87,6 +87,7 @@ public class GameMgr : MonoBehaviour
         if (configCloseBtn != null)
             configCloseBtn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configPanel.SetActive(false);
                 ChangeState(PlayerState.Play);
             });
@@ -94,6 +95,7 @@ public class GameMgr : MonoBehaviour
         if (inven_Btn != null)
             inven_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 if (state != PlayerState.Play)
                     return;
 
@@ -104,6 +106,7 @@ public class GameMgr : MonoBehaviour
         if (invenCloseBtn != null)
             invenCloseBtn.onClick.AddListener(() =>
             {
+                PlayClick();
                 invenPanel.SetActive(false);
                 ChangeState(PlayerState.Play);
             });
@@ -111,6 +114,7 @@ public class GameMgr : MonoBehaviour
         if (ExitBtn != null)
             ExitBtn.onClick.AddListener(() =>
             {
+                PlayClick();
                 Time.timeScale = 1;
                 FadeMgr.Inst.LoadScene("TitleScene");
             });
@@ -118,6 +122,7 @@ public class GameMgr : MonoBehaviour
         if (restart_Btn != null)
             restart_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 Time.timeScale = 1;
                 FadeMgr.Inst.LoadScene("GameScene");
             });
@@ -125,6 +130,7 @@ public class GameMgr : MonoBehaviour
         if (goTitle_Btn != null)
             goTitle_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 Time.timeScale = 1;
                 FadeMgr.Inst.LoadScene("TitleScene");
             });
@@ -132,6 +138,7 @@ public class GameMgr : MonoBehaviour
         if (tutoExit_Btn != null)
             tutoExit_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 tutorialPanel.SetActive(false);
                 ChangeState(PlayerState.Play);
             });
@@ -139,6 +146,7 @@ public class GameMgr : MonoBehaviour
         if (tuto_Btn != null)
             tuto_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configTutoPanel.SetActive(true);
                 configPanel.SetActive(false);
             });
@@ -146,6 +154,7 @@ public class GameMgr : MonoBehaviour
         if (configTutoExit_Btn != null)
             configTutoExit_Btn.onClick.AddListener(() =>
             {
+                PlayClick();
                 configTutoPanel.SetActive(false);
                 configPanel.SetActive(true);
             });
@@ -185,6 +194,9 @@ public class GameMgr : MonoBehaviour
     {
         ChangeState(PlayerState.GameEnd);
 
+        Sound_Mgr.Inst.StopBGM();
+        Sound_Mgr.Inst.PlayEffSound("GameEnd", 0.8f);
+
         resultPanel.SetActive(true);
 
         int survivedTime = Mathf.RoundToInt(900f - playTime);
@@ -202,17 +214,16 @@ public class GameMgr : MonoBehaviour
             $"체력 : {ps.MaxHp:0}\n" +
             $"피해감소 : {(ps.DamageReduction * 100f):0}%\n" +
             $"관통 : {ps.Penetration}\n\n" +
-            $"점수 : {score}\n" +
             $"킬 : {killScore}\n" +
             $"생존시간 : {min:00}:{sec:00}";
 
         int bestScore = PlayerPrefs.GetInt("BestScore", 0);
-        bestScoreText.text = bestScore.ToString();
+        bestScoreText.text = "최고기록\n" + bestScore + "\n\n\n" + "점수\n" + score; 
 
         if (score > bestScore)
         {
             PlayerPrefs.SetInt("BestScore", score);
-            bestScoreText.text = "최고기록\n" + score;
+            bestScoreText.text = "최고기록\n" + score + "\n\n\n" + "점수\n" + score;
             updateScoreText.text = "최고기록 갱신!";
         }
         else
@@ -279,7 +290,7 @@ public class GameMgr : MonoBehaviour
         bossLevel = 0;
 
         nextDifficultyTime = 840f;
-        nextBossTime = 840f;
+        nextBossTime = 760f;
 
         PlayerStats.Inst.ResetStats();
 
@@ -295,6 +306,11 @@ public class GameMgr : MonoBehaviour
         tutorialPanel.SetActive(true);
 
         ChangeState(PlayerState.Tutorial);
+    }
+
+    void PlayClick()
+    {
+        Sound_Mgr.Inst.PlayGUISound("UI_Click", 0.4f);
     }
 
     public static bool IsPointerOverUIObject() //UGUI의 UI들이 먼저 피킹되는지 확인하는 함수
