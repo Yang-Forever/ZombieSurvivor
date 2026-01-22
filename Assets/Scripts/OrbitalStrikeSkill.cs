@@ -6,8 +6,8 @@ public class OrbitalStrikeSkill : MonoBehaviour
     [Header("Setting")]
     public GameObject projectilePrefab;
     public Image coolTimeImg;
-    float coolTime = 20f;
-    float timer = 20;
+    float coolTime = 5f;
+    float timer = 5;
 
     public float distance = 10f;
     public Transform player;

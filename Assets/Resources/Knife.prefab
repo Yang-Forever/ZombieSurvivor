@@ -46,6 +46,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   zombieLayer:
     serializedVersion: 2
-    m_Bits: 64
+    m_Bits: 960
   knifeEffect: {fileID: 5503505460791601945, guid: 74c549d1b06b6b140a1fd9536eea637f, type: 3}
   playerTr: {fileID: 0}

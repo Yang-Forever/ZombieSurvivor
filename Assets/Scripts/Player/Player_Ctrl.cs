@@ -7,7 +7,10 @@ public class Player_Ctrl : MonoBehaviour
     [Header("Player Move")]
     float h = 0.0f;
     float v = 0.0f;
-    float rotSpeed = 25.0f;
+    float moveBlockRatio = 1f;
+    float moveCheckTimer = 0f;
+    Vector3 moveDir;
+    bool wantMove = false;
 
     [Header("Player Setting")]
     public Image expBar;
@@ -29,6 +32,14 @@ public class Player_Ctrl : MonoBehaviour
     {
         UpdateHpUI();
     }
+    void FixedUpdate()
+    {
+        if (GameMgr.Inst.state != PlayerState.Play || isDie || !wantMove)
+            return;
+
+        float speed = PlayerStats.Inst.MoveSpeed * moveBlockRatio;
+        transform.position += moveDir * speed * Time.fixedDeltaTime;
+    }
 
     // Update is called once per frame
     void Update()
@@ -36,40 +47,43 @@ public class Player_Ctrl : MonoBehaviour
         if (GameMgr.Inst.state != PlayerState.Play || isDie)
             return;
 
-        MoveKB();
+        MoveKB();          // 이동 판단만
+        RotateMouse();     // 회전은 Update OK
 
-        // 수동회전
-        RotateMouse();
-
-        //if (Input.GetKeyDown(KeyCode.Alpha2))
-        //    LevelUp();
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+            LevelUp();
     }
 
     void MoveKB()
     {
-        // 플레이어 이동
-        h = Input.GetAxis("Horizontal");
-        v = Input.GetAxis("Vertical");
+        h = Input.GetAxisRaw("Horizontal");
+        v = Input.GetAxisRaw("Vertical");
 
-        Vector3 inputDir = new Vector3(h, 0f, v);
-        if (inputDir.sqrMagnitude < 0.01f)
+        Vector3 input = new Vector3(h, 0f, v);
+
+        if (input.sqrMagnitude < 0.01f)
         {
+            wantMove = false;
             playerAnim.MoveAnim(0, 0);
             return;
         }
 
-        inputDir.Normalize();
+        input.Normalize();
 
-        float moveDist = PlayerStats.Inst.MoveSpeed * Time.deltaTime;
-
-        if (CanMove(inputDir))
+        moveCheckTimer += Time.deltaTime;
+        if (moveCheckTimer >= 0.1f)
         {
-            transform.position += inputDir * moveDist;
+            moveCheckTimer = 0f;
+            moveBlockRatio = CanMove(input) ? 1f : 0.5f;
         }
 
-        Vector3 localMoveDir = transform.InverseTransformDirection(inputDir);
+        moveDir = input;
+        wantMove = true;
+
+        Vector3 localMoveDir = transform.InverseTransformDirection(input);
         playerAnim.MoveAnim(localMoveDir.x, localMoveDir.z);
     }
+
 
     void RotateMouse()
     {
@@ -127,7 +141,6 @@ public class Player_Ctrl : MonoBehaviour
 
         return weightSum <= 4;
     }
-
 
     public void HitDamage(int damage)
     {

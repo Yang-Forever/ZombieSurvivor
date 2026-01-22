@@ -8,6 +8,7 @@ public class ExpEffectPool : MonoBehaviour
     public int poolSize = 30;
 
     Queue<GameObject> pool = new Queue<GameObject>();
+    public Transform expEffects;
 
     public static ExpEffectPool Inst;
 
@@ -17,7 +18,7 @@ public class ExpEffectPool : MonoBehaviour
 
         for (int i = 0; i < poolSize; i++)
         {
-            GameObject obj = Instantiate(effectPrefab, transform);
+            GameObject obj = Instantiate(effectPrefab, expEffects);
             obj.SetActive(false);
             pool.Enqueue(obj);
         }

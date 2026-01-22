@@ -41,7 +41,6 @@ public class Zombie_Ctrl : MonoBehaviour
     private float atkRange = 2.0f;
     private float atkCool = 1.0f;
     float atkTimer = 0.0f;
-    bool isAttack = false;
 
     // 현재 상태
     private ZombiePool pool;
@@ -57,11 +56,19 @@ public class Zombie_Ctrl : MonoBehaviour
     // 애니메이션
     public Anim anim;
     Animator animator = null;
+    SkinnedMeshRenderer[] skMeshRenderer;
+    float lodNear = 15f;
+    float lodMid = 23f;
 
     // 이동
+    Vector3 moveDir;
+    Vector3 sepDir;
+    bool wantMove;
+
     [SerializeField] LayerMask zombieLayer;
-    Rigidbody rb;
-    bool wasBlockedLastFrame = false;
+    static Collider[] overlapCache = new Collider[32];
+    int separationOffset;
+    int resolveFrameOffset;
 
     bool isInit = false;
 
@@ -94,30 +101,25 @@ public class Zombie_Ctrl : MonoBehaviour
     // 거리 조건
     float SkillRange = 8f;
 
-    // 피격 관련
-    Renderer[] renderers;
+    [Header("Hit")]
     MaterialPropertyBlock mpb;
     Coroutine hitCo;
 
     Color baseColor;
     Color hitColor = Color.red;
 
-
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
-        rb = GetComponent<Rigidbody>();
 
-        renderers = GetComponentsInChildren<SkinnedMeshRenderer>();
+        skMeshRenderer = GetComponentsInChildren<SkinnedMeshRenderer>();
         mpb = new MaterialPropertyBlock();
 
-        if (renderers.Length > 0)
-            baseColor = renderers[0].sharedMaterial.GetColor("_Color");
-    }
+        if (skMeshRenderer.Length > 0)
+            baseColor = skMeshRenderer[0].sharedMaterial.GetColor("_Color");
 
-    public void SetPool(ZombiePool p)
-    {
-        pool = p;
+        separationOffset = Random.Range(0, 3);
+        resolveFrameOffset = Random.Range(0, 3);
     }
 
     // Start is called before the first frame update
@@ -127,17 +129,31 @@ public class Zombie_Ctrl : MonoBehaviour
         player = target.GetComponent<Player_Ctrl>();
     }
 
+    private void FixedUpdate()
+    {
+        if (!isInit || isDead || !wantMove)
+            return;
+
+        Vector3 move = moveDir * moveSpeed + sepDir * 0.6f;   // 분리 영향도 조절
+
+        transform.position += move * Time.fixedDeltaTime;
+    }
+
     // Update is called once per frame
     void Update()
     {
-        if (!isInit)
+        if (GameMgr.Inst.state != PlayerState.Play)
             return;
 
-        if (isDead)
+        if (!isInit || isDead)
             return;
+
+        UpdateLOD();
 
         if (atkTimer > 0.0f)
             atkTimer -= Time.deltaTime;
+        else
+            atkTimer = 0.0f;
 
         if (zomType == ZombieType.Boss)
             BossMove();
@@ -147,6 +163,13 @@ public class Zombie_Ctrl : MonoBehaviour
             ZombieMove();
     }
 
+    #region ZombieSetUp
+
+    public void SetPool(ZombiePool p)
+    {
+        pool = p;
+    }
+
     void ZombieSetUp()
     {
         switch (zomType)
@@ -154,16 +177,16 @@ public class Zombie_Ctrl : MonoBehaviour
             case ZombieType.Normal: // 기본 좀비
                 {
                     baseHp = 60f;
-                    baseMoveSpeed = 3.0f;
+                    baseMoveSpeed = 2.0f;
                     baseDamage = 10;
-                    atkRange = 2f;
+                    atkRange = 1.5f;
                 }
                 break;
 
             case ZombieType.Explosion:
                 {
                     baseHp = 40f;
-                    baseMoveSpeed = 5.0f;
+                    baseMoveSpeed = 3.5f;
                     baseDamage = 30;
                     atkRange = 1f;
                 }
@@ -174,7 +197,7 @@ public class Zombie_Ctrl : MonoBehaviour
                     baseHp = 400f;
                     baseMoveSpeed = 3.0f;
                     baseDamage = 20;
-                    atkRange = 3f;
+                    atkRange = 2f;
                 }
                 break;
         }
@@ -198,21 +221,64 @@ public class Zombie_Ctrl : MonoBehaviour
         currHp = maxHp;
     }
 
+    public void ResetZombie()
+    {
+        ZombieSetUp();
+        ApplyDifficultyStat();
+
+        isDead = false;
+        isExplosion = false;
+        atkTimer = 0f;
+        hasAttacked = false;
+
+        ChangeAnim(AnimState.idle);
+
+        ResetHitColor();
+
+        if (zomType == ZombieType.Boss)
+        {
+            isChargingDash = false;
+            isDashing = false;
+            dashCanvas.gameObject.SetActive(false);
+            patternTimer = patternCool;
+        }
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb)
+        {
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            rb.isKinematic = false;
+        }
+
+        Collider col = GetComponent<Collider>();
+        if (col)
+            col.enabled = true;
+
+        isInit = true;
+    }
+
+    #endregion
+
     #region Zombie Action
 
     void ZombieMove()
     {
-        if (state == AnimState.attack)
+        wantMove = false;
+
+        if (isDead || isExplosion)
             return;
+
+        if (state == AnimState.attack)
+        {
+            RotateToPlayer();
+            return;
+        }
 
         Vector3 toPlayer = target.position - transform.position;
         toPlayer.y = 0f;
 
         float dist = toPlayer.magnitude;
-        if (dist < 0.01f)
-            return;
-
-        Vector3 dir = toPlayer.normalized;
 
         if (dist <= atkRange)
         {
@@ -220,97 +286,69 @@ public class Zombie_Ctrl : MonoBehaviour
             return;
         }
 
-        bool isBlocked = IsBlockedByFrontZombie(dir);
+        moveDir = toPlayer.normalized;
+        sepDir = GetSeparationVector();
+        wantMove = true;
 
-        if (wasBlockedLastFrame && !isBlocked)
-        {
-            dir = ApplyReleaseBias(dir);
-        }
-
-        wasBlockedLastFrame = isBlocked;
-
-        if (isBlocked)
-        {
-            ChangeAnim(AnimState.idle, 0.1f);
-            return;
-        }
-
-        transform.position += dir * moveSpeed * Time.deltaTime;
-        transform.forward = dir;
-
+        RotateToPlayer();
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
-
-    Vector3 ApplyReleaseBias(Vector3 dir)
+    Vector3 GetSeparationVector()
     {
-        // 좌/우 중 랜덤
-        Vector3 side = Vector3.Cross(Vector3.up, dir);
-        float sign = Random.value < 0.5f ? -1f : 1f;
+        float radius = 0.6f;
+        float strength = 0.02f;
 
-        float biasStrength = 0.25f;
+        int count = Physics.OverlapSphereNonAlloc(transform.position, radius, overlapCache, zombieLayer);
 
-        Vector3 newDir = (dir + side * sign * biasStrength).normalized;
-        return newDir;
-    }
+        if (count <= 1)
+            return Vector3.zero;
 
+        Vector3 sep = Vector3.zero;
 
-    bool IsBlockedByFrontZombie(Vector3 moveDir)
-    {
-        // Normal만 차단 로직 사용
-        if (zomType != ZombieType.Normal)
-            return false;
-
-        Collider[] cols = Physics.OverlapCapsule(
-            transform.position + Vector3.up * 0.5f,
-            transform.position + Vector3.up * 1.5f,
-            0.4f,
-            zombieLayer
-        );
-
-        float myDist = Vector3.Distance(transform.position, target.position);
-
-        foreach (var col in cols)
+        for (int i = 0; i < count; i++)
         {
-            if (col.attachedRigidbody == rb)
-                continue;
-
-            Zombie_Ctrl other = col.GetComponent<Zombie_Ctrl>();
-            if (other == null || other.isDead)
+            Zombie_Ctrl other = overlapCache[i].GetComponentInParent<Zombie_Ctrl>();
+            if (other == null || other == this || other.isDead)
                 continue;
 
             if (other.zomType != ZombieType.Normal)
                 continue;
 
-            float otherDist = Vector3.Distance(other.transform.position, target.position);
+            Vector3 diff = transform.position - other.transform.position;
+            diff.y = 0f;
 
-            if (otherDist < myDist)
-            {
-                Vector3 toOther =
-                    (other.transform.position - transform.position).normalized;
+            float d = diff.magnitude;
+            if (d < 0.001f)
+                continue;
 
-                if (Vector3.Dot(moveDir, toOther) > 0.3f)
-                    return true;
-            }
+            Vector3 forward = (target.position - transform.position);
+            forward.y = 0f;
+            forward.Normalize();
+
+            Vector3 side = diff - Vector3.Project(diff, forward);
+
+            sep += side.normalized * Mathf.Clamp01(1f - d / radius);
         }
 
-        return false;
-    }
+        float strengthScale = Mathf.Clamp01(1f - (count / 10f));
 
+        Vector3 result = sep.normalized * strength * strengthScale;
+        return Vector3.ClampMagnitude(result, 0.15f);
+
+    }
 
     void BombZombieMove()
     {
+        wantMove = false;
+
         if (isDead || isExplosion)
             return;
 
-        Vector3 dir = target.position - transform.position;
-        dir.y = 0f;
+        Vector3 toPlayer = target.position - transform.position;
+        toPlayer.y = 0f;
 
-        float dist = dir.magnitude;
-        if (dist < 0.01f)
-            return;
-
-        dir.Normalize();
+        float dist = toPlayer.magnitude;
 
         if (dist <= atkRange)
         {
@@ -318,41 +356,40 @@ public class Zombie_Ctrl : MonoBehaviour
             return;
         }
 
-        transform.position += dir * moveSpeed * Time.deltaTime;
-        transform.forward = dir;
-        PushThroughZombies(dir);
+        moveDir = toPlayer.normalized;
+        sepDir = Vector3.zero;
+        wantMove = true;
 
+        RotateToPlayer();
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
-    void PushThroughZombies(Vector3 moveDir)
+    void PushZombiesStraight(Vector3 moveDir)
     {
-        float radius = 0.45f;
-        float pushPower = 0.04f;
+        float radius = 0.7f;
+        float power = 0.12f;
 
-        Collider[] hits = Physics.OverlapCapsule(
-            transform.position + Vector3.up * 0.5f,
-            transform.position + Vector3.up * 1.5f,
-            radius,
-            zombieLayer
-        );
+        if (Time.frameCount % 2 != 0)
+            return;
 
-        foreach (var hit in hits)
+        Collider[] cols = Physics.OverlapSphere(transform.position, radius, zombieLayer);
+
+        foreach (var col in cols)
         {
-            Zombie_Ctrl z = hit.GetComponentInParent<Zombie_Ctrl>();
+            Zombie_Ctrl z = col.GetComponentInParent<Zombie_Ctrl>();
             if (z == null || z.isDead)
                 continue;
 
             if (z.zomType != ZombieType.Normal)
                 continue;
 
-            Vector3 toZombie = (z.transform.position - transform.position);
+            Vector3 toZombie = z.transform.position - transform.position;
             toZombie.y = 0f;
 
             if (Vector3.Dot(moveDir, toZombie.normalized) < 0.2f)
                 continue;
 
-            z.transform.position += moveDir * pushPower;
+            z.transform.position += moveDir * power * Time.deltaTime;
         }
     }
 
@@ -387,8 +424,10 @@ public class Zombie_Ctrl : MonoBehaviour
         atkTimer = atkCool;
         hasAttacked = false;
 
-        state = AnimState.attack;
-        curState = AnimState.attack;
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        RotateToPlayer();
 
         ChangeAnim(AnimState.attack, 0.12f);
     }
@@ -406,7 +445,7 @@ public class Zombie_Ctrl : MonoBehaviour
             return;
 
         Vector3 dirToPlayer = (player.transform.position - transform.position).normalized;
-        if (Vector3.Dot(transform.forward, dirToPlayer) < 0.3f)
+        if (Vector3.Dot(transform.forward, dirToPlayer) < 0.1f)
             return;
 
         hasAttacked = true;
@@ -415,8 +454,25 @@ public class Zombie_Ctrl : MonoBehaviour
 
     public void OnAttackEnd()
     {
-        state = AnimState.trace;
-        curState = AnimState.trace;
+        ChangeAnim(AnimState.trace, 0.12f);
+    }
+
+    void RotateToPlayer()
+    {
+        if (!target) return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRot,
+            Time.deltaTime * 10f   // 회전 반응 속도
+        );
     }
 
     void ChangeAnim(AnimState newState, float crossTime = 0.0f)
@@ -458,7 +514,7 @@ public class Zombie_Ctrl : MonoBehaviour
             return;
         }
 
-        ZombieMove();
+        BossLeadMove();
 
         float dist = Vector3.Distance(transform.position, target.position);
 
@@ -474,6 +530,65 @@ public class Zombie_Ctrl : MonoBehaviour
         }
     }
 
+    void BossLeadMove()
+    {
+        wantMove = false;
+
+        if (state == AnimState.attack)
+            return;
+
+        Vector3 toPlayer = target.position - transform.position;
+        toPlayer.y = 0f;
+
+        float dist = toPlayer.magnitude;
+
+        if (dist <= atkRange)
+        {
+            ZombieAttack();
+            return;
+        }
+
+        moveDir = toPlayer.normalized;
+        sepDir = Vector3.zero;   // 보스는 밀집 계산 제거
+        wantMove = true;
+
+        RotateToPlayer();
+        ChangeAnim(AnimState.trace, 0.12f);
+    }
+
+    void PushZombiesForward(Vector3 moveDir, float radius, float power)
+    {
+        if (Time.frameCount % 2 != 0) 
+            return;
+
+        Collider[] cols = Physics.OverlapSphere(transform.position, radius, zombieLayer);
+
+        foreach (var col in cols)
+        {
+            Zombie_Ctrl z = col.GetComponentInParent<Zombie_Ctrl>();
+            if (z == null || z.isDead)
+                continue;
+
+            if (z.zomType != ZombieType.Normal)
+                continue;
+
+            if (z.state == AnimState.attack)
+                continue;
+
+            Vector3 toZombie = z.transform.position - transform.position;
+            toZombie.y = 0f;
+
+            if (Vector3.Dot(moveDir, toZombie.normalized) < 0.1f)
+                continue;
+
+            Vector3 side = Vector3.Cross(Vector3.up, moveDir).normalized;
+            float sideSign = Vector3.Dot(side, toZombie) > 0 ? 1f : -1f;
+
+            Vector3 pushDir = (side * sideSign + moveDir * 0.3f).normalized;
+
+            z.transform.position += pushDir * power * Time.deltaTime;
+        }
+    }
 
     void StartDashCharge()
     {
@@ -514,32 +629,33 @@ public class Zombie_Ctrl : MonoBehaviour
         dashCanvas.gameObject.SetActive(false);
         dashHitBox.SetActive(true);
 
-        gameObject.layer = LayerMask.NameToLayer("BossDash");
-
         ChangeAnim(AnimState.dash, 0.12f);
     }
 
     void DashUpdate()
     {
-        dashTimer -= Time.deltaTime;
+        wantMove = true;
 
-        transform.position += dashDir * dashSpeed * Time.deltaTime;
+        moveDir = dashDir;
+        sepDir = Vector3.zero;
+
+        dashTimer -= Time.deltaTime;
 
         if (dashTimer <= 0f)
             EndDash();
     }
+
 
     public void EndDash()
     {
         isDashing = false;
         dashHitBox.SetActive(false);
 
-        gameObject.layer = LayerMask.NameToLayer("Zombie");
-
         ChangeAnim(AnimState.trace, 0.12f);
     }
     #endregion
 
+    #region Hit Action
 
     public void HitDamage(float damage)
     {
@@ -557,7 +673,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
             if (zomType == ZombieType.Boss)
             {
-                SpawnExp(100);
+                SpawnBossExp(300);
                 GameMgr.Inst.KillZombie(100);
                 StartCoroutine(BossDie());
             }
@@ -574,7 +690,10 @@ public class Zombie_Ctrl : MonoBehaviour
     void HitEffect()
     {
         if (hitCo != null)
+        {
             StopCoroutine(hitCo);
+            hitCo = null;
+        }
 
         hitCo = StartCoroutine(HitEffectCo());
     }
@@ -590,13 +709,27 @@ public class Zombie_Ctrl : MonoBehaviour
     {
         Color col = Color.Lerp(baseColor, hitColor, v);
 
-        foreach (var r in renderers)
+        foreach (var r in skMeshRenderer)
         {
             r.GetPropertyBlock(mpb);
             mpb.SetColor("_Color", col);
             r.SetPropertyBlock(mpb);
         }
     }
+
+    void ResetHitColor()
+    {
+        foreach (var r in skMeshRenderer)
+        {
+            r.GetPropertyBlock(mpb);
+            mpb.SetColor("_Color", baseColor);
+            r.SetPropertyBlock(mpb);
+        }
+    }
+
+    #endregion
+
+    #region Die Action
 
     IEnumerator Die()
     {
@@ -640,41 +773,6 @@ public class Zombie_Ctrl : MonoBehaviour
         Destroy(gameObject);
     }
 
-    public void ResetZombie()
-    {
-        ZombieSetUp();
-        ApplyDifficultyStat();
-
-        isDead = false;
-        isExplosion = false;
-        atkTimer = 0f;
-        hasAttacked = false;
-
-        ChangeAnim(AnimState.idle);
-
-        if (zomType == ZombieType.Boss)
-        {
-            isChargingDash = false;
-            isDashing = false;
-            dashCanvas.gameObject.SetActive(false);
-            patternTimer = patternCool;
-        }
-
-        Rigidbody rb = GetComponent<Rigidbody>();
-        if (rb)
-        {
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = false;
-        }
-
-        Collider col = GetComponent<Collider>();
-        if (col)
-            col.enabled = true;
-
-        isInit = true;
-    }
-
     void SpawnExp(int value)
     {
         ExpObj_Ctrl exp = ExpPool.Inst.OnGetExp();
@@ -686,6 +784,57 @@ public class Zombie_Ctrl : MonoBehaviour
 
         exp.SetUpExp(value);
     }
+
+    void SpawnBossExp(int value)
+    {
+        ExpObj_Ctrl exp = ExpPool.Inst.CreateBossExp();
+
+        Vector3 pos = transform.position;
+        pos.y = 0.5f;
+
+        exp.transform.position = pos;
+
+        exp.SetUpExp(value);
+    }
+
+    #endregion
+
+    #region Animation LOD
+
+    void SetSkinnedMesh(bool on)
+    {
+        foreach (var r in skMeshRenderer)
+            r.enabled = on;
+    }
+
+    void UpdateLOD()
+    {
+        if (zomType == ZombieType.Boss)
+            return;
+
+        if (state == AnimState.attack)
+            return;
+
+        float dist = Vector3.Distance(transform.position, target.position);
+
+        if (dist < lodNear)
+        {
+            animator.enabled = true;
+            SetSkinnedMesh(true);
+        }
+        else if (dist < lodMid)
+        {
+            animator.enabled = false;
+            SetSkinnedMesh(true);
+        }
+        else
+        {
+            animator.enabled = false;
+            SetSkinnedMesh(false);
+        }
+    }
+
+    #endregion
 
     private void OnCollisionEnter(Collision collision)
     {

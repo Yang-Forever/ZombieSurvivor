@@ -2661,7 +2661,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d64956ddb07b63b409e0c07ab2aa80a4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  aimCursor: {fileID: 2800000, guid: dcd5aae0341bd0642858735fe7fdc429, type: 3}
+  aimCursor: {fileID: 2800000, guid: 7415aa3ef7e67484d96d6c78dfce52b0, type: 3}
 --- !u!1 &1479475815
 GameObject:
   m_ObjectHideFlags: 0

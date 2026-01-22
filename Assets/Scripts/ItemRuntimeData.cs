@@ -98,6 +98,9 @@ public class ItemRuntimeData
                 case PassiveType.Reduction:
                     PlayerStats.Inst.AddReduction(value);
                     break;
+                case PassiveType.Penetration:
+                    PlayerStats.Inst.AddPenetration((int)value);
+                    break;
             }
         }
     }
@@ -183,21 +186,7 @@ public class ItemRuntimeData
 
         float interval = baseInterval * ((1f - reduceRate) / PlayerStats.Inst.AttackSpeed);
 
-        return Mathf.Max(0.1f, interval);
-    }
-
-
-    public int GetPenetration()
-    {
-        int result = baseData.penetration;
-
-        if (baseData.value3Type != Value3Type.PenetrationCount)
-            return result;
-
-        for (int i = 0; i < curLevel && i < baseData.value3.Length; i++)
-            result += (int)baseData.value3[i];
-
-        return result;
+        return Mathf.Max(0.001f, interval);
     }
 
     public int GetPelletCount()
@@ -214,6 +203,60 @@ public class ItemRuntimeData
             result += (int)baseData.value3[i];
 
         return result;
+    }
+
+    public float GetLength()
+    {
+        float length = baseData.value3[0];
+
+        for (int i = 1; i < curLevel && i < baseData.value3.Length; i++)
+            length += baseData.value3[i];
+
+        return length;
+    }
+
+    public float GetLaserTickDamage()
+    {
+        return baseData.baseDamage
+            * GetDamageRatio()
+            * PlayerStats.Inst.DamageMultiplier;
+    }
+
+    public float GetLaserTickInterval()
+    {
+        // 기본 틱 간격
+        float baseTick = 0.1f;
+
+        // 무기 레벨 기반 공속(value1)
+        float weaponSpeedBonus = 0f;
+        for (int i = 1; i < curLevel && i < baseData.value1.Length; i++)
+            weaponSpeedBonus += baseData.value1[i];   // 예: 0.05f씩
+
+        // 플레이어 공격속도 (레이저는 영향 약하게)
+        float playerAtkSpeed = 1f + PlayerStats.Inst.AttackSpeed * 0.01f;
+
+        // 최종 틱 간격
+        float interval =
+            baseTick
+            / (1f + weaponSpeedBonus)
+            / playerAtkSpeed;
+
+        // 안전 클램프
+        return Mathf.Clamp(interval, 0.02f, baseTick);
+    }
+
+    public float GetLaserHeatIncrease()
+    {
+        return 1f; // 초당 증가량 (고정 or SO화 가능)
+    }
+    public float GetLaserMaxHeat()
+    {
+        return 10f;
+    }
+
+    public float GetLaserCoolDown()
+    {
+        return 1.5f;
     }
 
     public float GetCoolTime()

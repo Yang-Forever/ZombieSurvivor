@@ -23,6 +23,7 @@ public class GameMgr : MonoBehaviour
     public Text killText;
     int score = 0;
     int killScore = 0;
+    float uiTimer = 0f;
 
     [Header("Inven Setting")]
     public Button inven_Btn;
@@ -66,6 +67,9 @@ public class GameMgr : MonoBehaviour
 
     private void Awake()
     {
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 60;
+
         Inst = this;
     }
 
@@ -170,9 +174,15 @@ public class GameMgr : MonoBehaviour
 
         playTime -= Time.deltaTime;
 
-        timeText.text = $"{(int)(playTime / 60):00} : {(int)(playTime % 60):00}";
-        scoreText.text = "Score : " + score;
-        killText.text = killScore.ToString();
+        uiTimer += Time.deltaTime;
+        if (uiTimer >= 0.1f)
+        {
+            uiTimer = 0f;
+
+            timeText.text = $"{(int)(playTime / 60):00} : {(int)(playTime % 60):00}";
+            scoreText.text = "Score : " + score;
+            killText.text = killScore.ToString();
+        }
 
         CheckDifficulty();
         CheckBossSpawn();
@@ -258,9 +268,9 @@ public class GameMgr : MonoBehaviour
         {
             difficultyLevel++;
             nextDifficultyTime -= difficultyInterval;
-
             ZombieSpawner.Inst.IncreaseDifficulty(difficultyLevel);
         }
+
     }
 
     void CheckBossSpawn()
@@ -269,7 +279,6 @@ public class GameMgr : MonoBehaviour
         {
             nextBossTime -= bossInterval;
             bossLevel++;
-
             ZombieSpawner.Inst.SpawnBoss(bossLevel);
         }
     }

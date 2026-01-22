@@ -2,22 +2,37 @@ using UnityEngine;
 
 public class Bullet_Ctrl : MonoBehaviour
 {
-    private float speed = 30.0f;
+    private BulletPool pool;
+
+    private float lifeTime;
+    private float speed = 50.0f;
     private float damage;
     private int penetration;
 
-    public GameObject sparkEffect;
-
     // Start is called before the first frame update
-    void Start()
+    private void OnEnable()
     {
-        Destroy(gameObject, 3.0f);
+        lifeTime = 3.0f;
     }
 
     // Update is called once per frame
     void Update()
     {
         transform.position += transform.forward * speed * Time.deltaTime;
+
+        lifeTime -= Time.deltaTime;
+        if(lifeTime <= 0)
+            ReturnPool();
+    }
+
+    public void SetPool(BulletPool p)
+    {
+        pool = p;
+    }
+
+    void ReturnPool()
+    {
+        pool.Return(this);
     }
 
     public void SetDamage(float value)
@@ -27,23 +42,23 @@ public class Bullet_Ctrl : MonoBehaviour
 
     public void SetPenetration(int value)
     {
-        penetration = value;
+        penetration = value + 1;
     }
 
     private void OnTriggerEnter(Collider coll)
     {
         if (coll.CompareTag("Zombie"))
         {
-            Debug.Log("Hit");
-            coll.gameObject.GetComponent<Zombie_Ctrl>().HitDamage(damage);
+            Zombie_Ctrl zombie = coll.GetComponentInParent<Zombie_Ctrl>();
+            if (zombie == null)
+                return;
+
+            zombie.HitDamage(damage);
 
             penetration--;
 
-            //GameObject spark = Instantiate(sparkEffect, transform.position, Quaternion.identity);
-            //Destroy(spark, spark.GetComponent<ParticleSystem>().main.duration + 0.2f);
-
-            if (penetration < 0)
-                Destroy(gameObject);
+            if (penetration <= 0)
+                ReturnPool();
         }
     }
 }

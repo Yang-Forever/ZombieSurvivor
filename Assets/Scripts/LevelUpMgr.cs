@@ -32,6 +32,7 @@ public class LevelUpMgr : MonoBehaviour
     public void Show()
     {
         GameMgr.Inst.ChangeState(PlayerState.LevelUp);
+        GameMgr.Inst.timeText.gameObject.SetActive(false);
         lvPanel.SetActive(true);
 
         List<ItemRuntimeData> canPickItems = GetRandomItem(3);
@@ -53,6 +54,7 @@ public class LevelUpMgr : MonoBehaviour
 
     public void Hide()
     {
+        GameMgr.Inst.timeText.gameObject.SetActive(true);
         lvPanel.SetActive(false);
         GameMgr.Inst.ChangeState(PlayerState.Play);
         Sound_Mgr.Inst.ResumeBGM();

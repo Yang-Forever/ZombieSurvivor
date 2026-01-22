@@ -7,7 +7,7 @@ public enum ItemType
 
 public enum MainWeaponType
 {
-    None, Pistol, Rifle, Shotgun, Sniper
+    None, Pistol, Rifle, Shotgun, Lazer
 }
 
 public enum PassiveType
@@ -17,7 +17,7 @@ public enum PassiveType
 
 public enum Value3Type
 {
-    None, PelletCount, PenetrationCount, ExplosionRange, KnifeRange
+    None, PelletCount, LaserTickLength, ExplosionRange, KnifeRange
 }
 public enum ValueDisplayType
 {
@@ -56,8 +56,6 @@ public class ItemData : ScriptableObject
 
     [Header("Weapon Setting")]
     public float baseDamage;
-    public float damageRatios;
-    public int baseMagazine;
     public int penetration;
     [TextArea]
     public string baseDesc;

@@ -2,37 +2,70 @@ using UnityEngine;
 
 public class Fire_Ctrl : MonoBehaviour
 {
-    GameObject bulletPrefab = null;
-    public GameObject firePos = null;
+    public Transform firePos = null;
 
     ItemRuntimeData data;
 
     private float fireTimer;
 
+    [Header("Laser")]
+    public Laser_Ctrl laser;
+    [SerializeField] LaserUI laserUI;
+    bool laserInited = false;
+
     // Start is called before the first frame update
     void Start()
     {
-        bulletPrefab = (GameObject)Resources.Load("Bullet");
-
         if (firePos == null)
-            firePos = GameObject.Find("FirePos");
+            firePos = GameObject.Find("FirePos").transform;
 
         fireTimer = 0.0f;
+
+        if (laser != null)
+            laser.SetLaserActive(false);
+
+        if (laserUI != null)
+            laserUI.SetVisible(false);
+
+        laserInited = false;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(GameMgr.Inst.state != PlayerState.Play)
+        if (GameMgr.Inst.state != PlayerState.Play)
             return;
 
         data = Gun.Inst.curWeapon;
+        if (data == null)
+            return;
 
-        fireTimer -= Time.deltaTime;
-        Fire(data);
+        bool isLaserWeapon = data.baseData.mainWeapon == MainWeaponType.Lazer;
+        laserUI.SetVisible(isLaserWeapon);
+
+        if (isLaserWeapon)
+        {
+            if (!laserInited)
+            {
+                laser.Init(firePos, data);
+                laserInited = true;
+            }
+
+            LaserUpdate();
+        }
+        else
+        {
+            if (laserInited)
+            {
+                laser.StopFire();
+                laserInited = false;
+            }
+
+            fireTimer -= Time.deltaTime;
+            Fire(data);
+        }
     }
 
-    // 수동
     void Fire(ItemRuntimeData runtimeData)
     {
         if (fireTimer > 0.0f)
@@ -42,14 +75,10 @@ public class Fire_Ctrl : MonoBehaviour
         {
             Sound_Mgr.Inst.PlayEffSoundLimit("Shot", 0.6f, 0.08f);
 
-            if (data.baseData.itemName == "Shotgun")
-            {
+            if (data.baseData.mainWeapon == MainWeaponType.Shotgun)
                 SpreadFire();
-            }
             else
-            {
                 StraightFire();
-            }
 
             fireTimer = runtimeData.GetInterval();
         }
@@ -57,11 +86,13 @@ public class Fire_Ctrl : MonoBehaviour
 
     void StraightFire()
     {
-        GameObject go = Instantiate(bulletPrefab, firePos.transform.position, firePos.transform.rotation);
-        Bullet_Ctrl bullet = go.GetComponent<Bullet_Ctrl>();
+        Bullet_Ctrl bullet = BulletPool.Inst.Get();
+
+        bullet.transform.position = firePos.position;
+        bullet.transform.rotation = firePos.rotation;
 
         float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;    // 기본 무기 데미지 * 무기 데미지 증감률 * 스텟 공격력 증감률
-        int penetration = data.GetPenetration() + PlayerStats.Inst.Penetration;
+        int penetration = data.baseData.penetration + PlayerStats.Inst.Penetration;
 
         bullet.SetDamage(damage);
         bullet.SetPenetration(penetration);
@@ -74,7 +105,7 @@ public class Fire_Ctrl : MonoBehaviour
         float maxAngle = 15.0f;
 
         float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;
-        int penetration = data.GetPenetration() + PlayerStats.Inst.Penetration;
+        int penetration = data.baseData.penetration + PlayerStats.Inst.Penetration;
 
         float step = (maxAngle * 2f) / (pelletCount - 1);
         float startAngle = -maxAngle;
@@ -83,14 +114,27 @@ public class Fire_Ctrl : MonoBehaviour
         {
             float angle = startAngle + step * i;
 
-            GameObject go = Instantiate(bulletPrefab, firePos.transform.position, firePos.transform.rotation);
-            Bullet_Ctrl bullet = go.GetComponent<Bullet_Ctrl>();
+            Bullet_Ctrl bullet = BulletPool.Inst.Get();
 
-            go.transform.Rotate(0, angle, 0);
+            bullet.transform.position = firePos.position;
+            bullet.transform.rotation = firePos.rotation;
+            bullet.transform.Rotate(0f, angle, 0f);
 
             bullet.SetDamage(damage);
             bullet.SetPenetration(penetration);
         }
     }
 
+    void LaserUpdate()
+    {
+        if (laser == null)
+            return;
+
+        bool isPressing = Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject();
+
+        if (isPressing)
+            laser.StartFire();
+        else if(!isPressing)
+            laser.StopFire();
+    }
 }

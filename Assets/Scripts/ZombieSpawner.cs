@@ -12,6 +12,7 @@ public class ZombieSpawner : MonoBehaviour
     [Header("Spawn Distance")]
     public float minDistance = 12f;   // 원 안쪽 금지
     public float maxDistance = 17f;   // 원 안쪽 금지
+    float safeMargin = 1.5f;
 
     [Header("Map Bounds")]
     public BoxCollider mapBounds;     // 맵 전체 영역
@@ -138,8 +139,8 @@ public class ZombieSpawner : MonoBehaviour
             Vector3 pos = player.position + dir * dist;
             pos.y = 0f;
 
-            if (pos.x < b.min.x || pos.x > b.max.x ||
-                pos.z < b.min.z || pos.z > b.max.z)
+            if (pos.x < b.min.x + safeMargin || pos.x > b.max.x - safeMargin ||
+                pos.z < b.min.z + safeMargin || pos.z > b.max.z - safeMargin)
                 continue;
 
             result = pos;

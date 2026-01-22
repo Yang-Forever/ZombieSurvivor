@@ -41,4 +41,4 @@ MonoBehaviour:
   value2Display: 0
   value3Display: 0
   levelUpDesc: "\uACF5\uACA9\uC18D\uB3C4 {1}% \uC99D\uAC00"
-  valueDesc: "\uACF5\uACA9\uC18D\uB3C4 {1} \uC99D\uAC00%"
+  valueDesc: "\uACF5\uACA9\uC18D\uB3C4 {1}% \uC99D\uAC00"

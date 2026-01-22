@@ -4,7 +4,7 @@ public abstract class SubWeaponBase : MonoBehaviour
 {
     protected ItemRuntimeData data;
 
-    float cooldownTimer = 0f;
+    [HideInInspector] public float cooldownTimer = 0f;
 
     public ItemRuntimeData Data => data;
 
@@ -19,11 +19,13 @@ public abstract class SubWeaponBase : MonoBehaviour
         if (data == null)
             return;
 
-        cooldownTimer -= Time.deltaTime;
-        if (cooldownTimer <= 0f)
+        if (cooldownTimer > 0f)
         {
-            Use();
+            cooldownTimer -= Time.deltaTime;
+            return;
         }
+
+        Use();
     }
 
     protected void ResetCooldown()
@@ -35,12 +37,12 @@ public abstract class SubWeaponBase : MonoBehaviour
 
     public float GetCooldownRatio()
     {
-        if (data == null) 
+        if (data == null)
             return 0f;
 
         float total = data.GetCoolTime();
 
-        if (total <= 0f) 
+        if (total <= 0f)
             return 0f;
 
         return Mathf.Clamp01(cooldownTimer / total);

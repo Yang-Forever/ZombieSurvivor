@@ -4,9 +4,11 @@ using UnityEngine;
 
 public class ExpPool : MonoBehaviour
 {
-    public GameObject ExpPrefab = null;
+    public GameObject expPrefab = null;
+    public GameObject bossExpPrefab = null;
+
     private Queue<ExpObj_Ctrl> expPool = new Queue<ExpObj_Ctrl>();
-    public Transform expSpawner;
+    public Transform exps;
 
     private int expPoolCount = 100;
 
@@ -23,10 +25,16 @@ public class ExpPool : MonoBehaviour
     }
     void CreateExp()
     {
-        var obj = Instantiate(ExpPrefab).GetComponent<ExpObj_Ctrl>();
-        obj.transform.SetParent(expSpawner);
+        var obj = Instantiate(expPrefab).GetComponent<ExpObj_Ctrl>();
+        obj.transform.SetParent(exps);
         obj.gameObject.SetActive(false);
         expPool.Enqueue(obj);
+    }
+    public ExpObj_Ctrl CreateBossExp()
+    {
+        ExpObj_Ctrl exp = Instantiate(bossExpPrefab).GetComponent<ExpObj_Ctrl>();
+        exp.transform.SetParent(exps);
+        return exp;
     }
 
     public ExpObj_Ctrl OnGetExp()
@@ -39,7 +47,7 @@ public class ExpPool : MonoBehaviour
         ExpObj_Ctrl exp = expPool.Dequeue();
         exp.gameObject.SetActive(true);
 
-        exp.transform.SetParent(expSpawner);
+        exp.transform.SetParent(exps);
 
         return exp;
     }

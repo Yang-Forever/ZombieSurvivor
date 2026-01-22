@@ -90,6 +90,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: Slab_3
       objectReference: {fileID: 0}
+    - target: {fileID: 5984875761179163344, guid: 5eb4cd7b2948ce241a0eede50313b3cd, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5984875761179163344, guid: 5eb4cd7b2948ce241a0eede50313b3cd, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5984875761179163344, guid: 5eb4cd7b2948ce241a0eede50313b3cd, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5984875761179163344, guid: 5eb4cd7b2948ce241a0eede50313b3cd, type: 3}
+      propertyPath: m_ReflectionProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -156,6 +172,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7845752770894590397, guid: 85f14fb04dda4ef4a977ec13bac7d97b, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7845752770894590397, guid: 85f14fb04dda4ef4a977ec13bac7d97b, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7845752770894590397, guid: 85f14fb04dda4ef4a977ec13bac7d97b, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7845752770894590397, guid: 85f14fb04dda4ef4a977ec13bac7d97b, type: 3}
+      propertyPath: m_ReflectionProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -220,6 +252,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3606220129536308856, guid: 1f8ff9c428b6f9e419cbdfdc523f83e6, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5539283142074314622, guid: 1f8ff9c428b6f9e419cbdfdc523f83e6, type: 3}
+      propertyPath: m_CastShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5539283142074314622, guid: 1f8ff9c428b6f9e419cbdfdc523f83e6, type: 3}
+      propertyPath: m_ReceiveShadows
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5539283142074314622, guid: 1f8ff9c428b6f9e419cbdfdc523f83e6, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5539283142074314622, guid: 1f8ff9c428b6f9e419cbdfdc523f83e6, type: 3}
+      propertyPath: m_ReflectionProbeUsage
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

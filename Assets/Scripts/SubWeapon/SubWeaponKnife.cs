@@ -23,16 +23,13 @@ public class SubWeaponKnife : SubWeaponBase
 
         int level = data.curLevel - 1;
 
-        float radius = data.baseData.value3[level];
+        float radius = data.GetLength();
         float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;
 
         int hitCount = Physics.OverlapSphereNonAlloc(playerTr.position, radius, hit, zombieLayer);
 
         if (hitCount <= 0)
-        {
-            ResetCooldown();
             return;
-        }
 
         Sound_Mgr.Inst.PlayEffSoundLimit("Knife", 0.7f, 0.1f);
 
@@ -42,10 +39,10 @@ public class SubWeaponKnife : SubWeaponBase
 
         for (int i = 0; i < hitCount; i++)
         {
-            if (hit[i].TryGetComponent(out Zombie_Ctrl zombie))
+            Zombie_Ctrl zombie = hit[i].GetComponentInParent<Zombie_Ctrl>();
+            if (zombie != null && !zombie.isDead)
             {
                 zombie.HitDamage(damage);
-                Debug.Log("hit");
             }
         }
 
@@ -55,6 +52,6 @@ public class SubWeaponKnife : SubWeaponBase
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(playerTr.position, data.baseData.value3[data.curLevel - 1]);
+        Gizmos.DrawWireSphere(playerTr.position, data.GetLength());
     }
 }
