@@ -182,11 +182,11 @@ public class ItemRuntimeData
         for (int i = 1; i < curLevel && i < baseData.value1.Length; i++)
             reduceRate += baseData.value1[i];
 
-        reduceRate = Mathf.Clamp(reduceRate, 0f, 0.8f);
+        reduceRate = Mathf.Clamp(reduceRate, 0f, 1.0f);
 
         float interval = baseInterval * ((1f - reduceRate) / PlayerStats.Inst.AttackSpeed);
 
-        return Mathf.Max(0.001f, interval);
+        return Mathf.Max(0.03f, interval);
     }
 
     public int GetPelletCount()
@@ -215,17 +215,17 @@ public class ItemRuntimeData
         return length;
     }
 
-    public float GetLaserTickDamage()
+    public float GetFlameTickDamage()
     {
         return baseData.baseDamage
             * GetDamageRatio()
             * PlayerStats.Inst.DamageMultiplier;
     }
 
-    public float GetLaserTickInterval()
+    public float GetFlameTickInterval()
     {
         // 기본 틱 간격
-        float baseTick = 0.1f;
+        float baseTick = baseData.value1[0];
 
         // 무기 레벨 기반 공속(value1)
         float weaponSpeedBonus = 0f;
@@ -245,16 +245,16 @@ public class ItemRuntimeData
         return Mathf.Clamp(interval, 0.02f, baseTick);
     }
 
-    public float GetLaserHeatIncrease()
+    public float GetFlameHeatIncrease()
     {
         return 1f; // 초당 증가량 (고정 or SO화 가능)
     }
-    public float GetLaserMaxHeat()
+    public float GetFlameMaxHeat()
     {
         return 10f;
     }
 
-    public float GetLaserCoolDown()
+    public float GetFlameCoolDown()
     {
         return 1.5f;
     }

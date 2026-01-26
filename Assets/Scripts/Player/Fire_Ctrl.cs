@@ -9,9 +9,9 @@ public class Fire_Ctrl : MonoBehaviour
     private float fireTimer;
 
     [Header("Laser")]
-    public Laser_Ctrl laser;
-    [SerializeField] LaserUI laserUI;
-    bool laserInited = false;
+    public Flame_Ctrl flame;
+    [SerializeField] FlameUI flameUI;
+    bool flameInited = false;
 
     // Start is called before the first frame update
     void Start()
@@ -21,13 +21,13 @@ public class Fire_Ctrl : MonoBehaviour
 
         fireTimer = 0.0f;
 
-        if (laser != null)
-            laser.SetLaserActive(false);
+        if (flame != null)
+            flame.SetFlameActive(false);
 
-        if (laserUI != null)
-            laserUI.SetVisible(false);
+        if (flameUI != null)
+            flameUI.SetVisible(false);
 
-        laserInited = false;
+        flameInited = false;
     }
 
     // Update is called once per frame
@@ -40,25 +40,25 @@ public class Fire_Ctrl : MonoBehaviour
         if (data == null)
             return;
 
-        bool isLaserWeapon = data.baseData.mainWeapon == MainWeaponType.Lazer;
-        laserUI.SetVisible(isLaserWeapon);
+        bool isFlameWeapon = data.baseData.mainWeapon == MainWeaponType.Flamethrower;
+        flameUI.SetVisible(isFlameWeapon);
 
-        if (isLaserWeapon)
+        if (isFlameWeapon)
         {
-            if (!laserInited)
+            if (!flameInited)
             {
-                laser.Init(firePos, data);
-                laserInited = true;
+                flame.Init(firePos, data);
+                flameInited = true;
             }
 
             LaserUpdate();
         }
         else
         {
-            if (laserInited)
+            if (flameInited)
             {
-                laser.StopFire();
-                laserInited = false;
+                flame.StopFire();
+                flameInited = false;
             }
 
             fireTimer -= Time.deltaTime;
@@ -127,14 +127,14 @@ public class Fire_Ctrl : MonoBehaviour
 
     void LaserUpdate()
     {
-        if (laser == null)
+        if (flame == null)
             return;
 
         bool isPressing = Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject();
 
         if (isPressing)
-            laser.StartFire();
+            flame.StartFire();
         else if(!isPressing)
-            laser.StopFire();
+            flame.StopFire();
     }
 }

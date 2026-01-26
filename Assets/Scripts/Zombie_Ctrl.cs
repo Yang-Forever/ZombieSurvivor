@@ -65,6 +65,10 @@ public class Zombie_Ctrl : MonoBehaviour
     Vector3 sepDir;
     bool wantMove;
 
+    [Header("Map Bounds")]
+    public BoxCollider mapBounds;
+    float mapPadding = 0.6f;
+
     [SerializeField] LayerMask zombieLayer;
     static Collider[] overlapCache = new Collider[32];
     int separationOffset;
@@ -127,6 +131,7 @@ public class Zombie_Ctrl : MonoBehaviour
     {
         target = GameObject.Find("Player").transform;
         player = target.GetComponent<Player_Ctrl>();
+        mapBounds = GameObject.Find("MapBounds").GetComponent<BoxCollider>();
     }
 
     private void FixedUpdate()
@@ -136,7 +141,11 @@ public class Zombie_Ctrl : MonoBehaviour
 
         Vector3 move = moveDir * moveSpeed + sepDir * 0.6f;   // 분리 영향도 조절
 
-        transform.position += move * Time.fixedDeltaTime;
+        Vector3 nextPos = transform.position + move * Time.fixedDeltaTime;
+
+        ClampToMap(ref nextPos);
+
+        transform.position = nextPos;
     }
 
     // Update is called once per frame
@@ -336,6 +345,16 @@ public class Zombie_Ctrl : MonoBehaviour
         Vector3 result = sep.normalized * strength * strengthScale;
         return Vector3.ClampMagnitude(result, 0.15f);
 
+    }
+    void ClampToMap(ref Vector3 pos)
+    {
+        if (!mapBounds)
+            return;
+
+        Bounds b = mapBounds.bounds;
+
+        pos.x = Mathf.Clamp(pos.x, b.min.x + mapPadding, b.max.x - mapPadding);
+        pos.z = Mathf.Clamp(pos.z, b.min.z + mapPadding, b.max.z - mapPadding);
     }
 
     void BombZombieMove()
@@ -590,12 +609,29 @@ public class Zombie_Ctrl : MonoBehaviour
         }
     }
 
+    void DashChargeUpdate()
+    {
+        wantMove = false;
+        moveDir = Vector3.zero;
+        sepDir = Vector3.zero;
+
+        dashChargeTimer += Time.deltaTime;
+        dashFill.fillAmount = dashChargeTimer / dashChargeTime;
+
+        if (dashFill.fillAmount >= 1f)
+            StartDash();
+    }
+
     void StartDashCharge()
     {
         patternTimer = patternCool;
 
         isChargingDash = true;
         dashChargeTimer = 0f;
+
+        wantMove = false;
+        moveDir = Vector3.zero;
+        sepDir = Vector3.zero;
 
         dashFill.fillAmount = 0f;
         dashCanvas.gameObject.SetActive(true);
@@ -611,14 +647,6 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.rage, 0.12f);
     }
 
-    void DashChargeUpdate()
-    {
-        dashChargeTimer += Time.deltaTime;
-        dashFill.fillAmount = dashChargeTimer / dashChargeTime;
-
-        if (dashFill.fillAmount >= 1f)
-            StartDash();
-    }
 
     void StartDash()
     {

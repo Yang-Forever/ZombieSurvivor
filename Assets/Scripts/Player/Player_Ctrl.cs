@@ -12,6 +12,10 @@ public class Player_Ctrl : MonoBehaviour
     Vector3 moveDir;
     bool wantMove = false;
 
+    [Header("Map Bounds")]
+    public BoxCollider mapBounds;
+    float mapPadding = 0.5f;
+
     [Header("Player Setting")]
     public Image expBar;
     float curExp = 0;
@@ -23,8 +27,12 @@ public class Player_Ctrl : MonoBehaviour
 
     PlayerAnim_Ctrl playerAnim;
 
+    public static Player_Ctrl Inst = null;
+
     private void Awake()
     {
+        Inst = this;
+
         playerAnim = GetComponentInChildren<PlayerAnim_Ctrl>();
     }
 
@@ -32,13 +40,19 @@ public class Player_Ctrl : MonoBehaviour
     {
         UpdateHpUI();
     }
+
     void FixedUpdate()
     {
         if (GameMgr.Inst.state != PlayerState.Play || isDie || !wantMove)
             return;
 
         float speed = PlayerStats.Inst.MoveSpeed * moveBlockRatio;
-        transform.position += moveDir * speed * Time.fixedDeltaTime;
+
+        Vector3 nextPos = transform.position + moveDir * speed * Time.fixedDeltaTime;
+
+        ClampToMap(ref nextPos);
+
+        transform.position = nextPos;
     }
 
     // Update is called once per frame
@@ -84,7 +98,6 @@ public class Player_Ctrl : MonoBehaviour
         playerAnim.MoveAnim(localMoveDir.x, localMoveDir.z);
     }
 
-
     void RotateMouse()
     {
         // 플레이어 회전 (컴퓨터용 마우스 회전)
@@ -108,6 +121,17 @@ public class Player_Ctrl : MonoBehaviour
         }
     }
 
+    void ClampToMap(ref Vector3 pos)
+    {
+        if (!mapBounds)
+            return;
+
+        Bounds b = mapBounds.bounds;
+
+        pos.x = Mathf.Clamp(pos.x, b.min.x + mapPadding, b.max.x - mapPadding);
+        pos.z = Mathf.Clamp(pos.z, b.min.z + mapPadding, b.max.z - mapPadding);
+    }
+
     bool CanMove(Vector3 moveDir)
     {
         float radius = 0.3f;
@@ -115,12 +139,7 @@ public class Player_Ctrl : MonoBehaviour
 
         Vector3 pos = transform.position;
 
-        Collider[] hits = Physics.OverlapCapsule(
-            pos + Vector3.up * 0.4f,
-            pos + Vector3.up * (height - 0.2f),
-            radius,
-            LayerMask.GetMask("NormalZombie", "BossZombie")
-        );
+        Collider[] hits = Physics.OverlapCapsule(pos + Vector3.up * 0.4f, pos + Vector3.up * (height - 0.2f), radius, LayerMask.GetMask("NormalZombie", "BossZombie"));
 
         int weightSum = 0;
 
@@ -165,7 +184,7 @@ public class Player_Ctrl : MonoBehaviour
         UpdateHpUI();
     }
 
-    void UpdateHpUI()
+    public void UpdateHpUI()
     {
         hpBar.fillAmount = PlayerStats.Inst.curHp / PlayerStats.Inst.MaxHp;
 
@@ -185,12 +204,13 @@ public class Player_Ctrl : MonoBehaviour
     {
         curExp += value;
 
-        expBar.fillAmount = curExp / maxExp;
-
-        if (curExp >= maxExp)
+        while (curExp >= maxExp)
         {
+            curExp -= maxExp;
             LevelUp();
         }
+
+        expBar.fillAmount = curExp / maxExp;
     }
 
     void LevelUp()
@@ -198,9 +218,8 @@ public class Player_Ctrl : MonoBehaviour
         Sound_Mgr.Inst.StopBGM();
         Sound_Mgr.Inst.PlayEffSound("LevelUp", 0.8f);
 
-        curExp -= maxExp;
         level++;
-        curExp = 0;
+
         LevelUpMgr.Inst.Show();
 
         if (maxExp <= 300)
@@ -212,7 +231,6 @@ public class Player_Ctrl : MonoBehaviour
             maxExp += 100;
         }
 
-        expBar.fillAmount = curExp / maxExp;
         GameMgr.Inst.levelText.text = "Lv " + level;
     }
 

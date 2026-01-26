@@ -7,7 +7,7 @@ public enum ItemType
 
 public enum MainWeaponType
 {
-    None, Pistol, Rifle, Shotgun, Lazer
+    None, Pistol, Rifle, Shotgun, Flamethrower
 }
 
 public enum PassiveType
@@ -17,7 +17,7 @@ public enum PassiveType
 
 public enum Value3Type
 {
-    None, PelletCount, LaserTickLength, ExplosionRange, KnifeRange
+    None, PelletCount, FlameTickLength, ExplosionRange, KnifeRange
 }
 public enum ValueDisplayType
 {

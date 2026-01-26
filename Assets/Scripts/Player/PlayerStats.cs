@@ -77,6 +77,8 @@ public class PlayerStats : MonoBehaviour
 
         if(curHp >= MaxHp)
             curHp = MaxHp;
+
+        Player_Ctrl.Inst.UpdateHpUI();
     }
 
     public void AddReduction(float value)

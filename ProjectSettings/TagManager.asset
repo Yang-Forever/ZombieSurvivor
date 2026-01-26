@@ -7,11 +7,9 @@ TagManager:
   - Zombie
   - Wall
   - ExpObj
-  - House
-  - Fence
   - Ground
-  - FxTemporaire
   - Map
+  - Bullet
   layers:
   - Default
   - TransparentFX

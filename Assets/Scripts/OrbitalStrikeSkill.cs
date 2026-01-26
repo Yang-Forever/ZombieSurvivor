@@ -5,9 +5,11 @@ public class OrbitalStrikeSkill : MonoBehaviour
 {
     [Header("Setting")]
     public GameObject projectilePrefab;
-    public Image coolTimeImg;
-    float coolTime = 5f;
-    float timer = 5;
+    public Image iconImg;
+    public Text countText;
+
+    public int maxCharge = 3;
+    int curCharge = 0;
 
     public float distance = 10f;
     public Transform player;
@@ -17,26 +19,22 @@ public class OrbitalStrikeSkill : MonoBehaviour
     private void Awake()
     {
         Inst = this;
+
+        UpdateUI();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(timer <= 0)
-        {
-            timer = 0;
-            if(Input.GetKeyDown(KeyCode.Q))
-            {
-                UseOrbitalStrike();
-                timer = coolTime;
-            }
-        }
-        else
-        {
-            timer -= Time.deltaTime;
-        }
+        if (curCharge <= 0)
+            return;
 
-        coolTimeImg.fillAmount = timer / coolTime;
+        if (Input.GetKeyDown(KeyCode.Q))
+        {
+            UseOrbitalStrike();
+            curCharge--;
+            UpdateUI();
+        }
     }
 
     void UseOrbitalStrike()
@@ -62,5 +60,26 @@ public class OrbitalStrikeSkill : MonoBehaviour
 
         pos = Vector3.zero;
         return false;
+    }
+
+    public void AddCharge(int amount = 1)
+    {
+        curCharge = Mathf.Clamp(curCharge + amount, 0, maxCharge);
+        UpdateUI();
+    }
+
+    void UpdateUI()
+    {
+        if (curCharge <= 0)
+        {
+            iconImg.gameObject.SetActive(false);
+            countText.gameObject.SetActive(false);
+        }
+        else
+        {
+            iconImg.gameObject.SetActive(true);
+            countText.text = curCharge.ToString();
+            countText.gameObject.SetActive(true);
+        }
     }
 }

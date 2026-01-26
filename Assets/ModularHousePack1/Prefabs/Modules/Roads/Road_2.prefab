@@ -391,6 +391,10 @@ PrefabInstance:
       propertyPath: m_ReflectionProbeUsage
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7637181712826071818, guid: 92cc69eae3f11624f97bada49aa65f7a, type: 3}
+      propertyPath: m_Center.y
+      value: -0.03
+      objectReference: {fileID: 0}
     - target: {fileID: 8081519128640266119, guid: 92cc69eae3f11624f97bada49aa65f7a, type: 3}
       propertyPath: m_RootOrder
       value: 3

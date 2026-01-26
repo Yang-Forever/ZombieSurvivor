@@ -19,7 +19,7 @@ public class TitleMgr : MonoBehaviour
     void Start()
     {
         // 타이틀 브금
-        //Sound_Mgr.Inst.PlayBGM("BGM_Title", 0.2f);
+        Sound_Mgr.Inst.PlayBGM("BGM_Title", 0.2f);
 
         if (gameStart_Btn != null)
             gameStart_Btn.onClick.AddListener(() =>

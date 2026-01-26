@@ -22,9 +22,9 @@ MonoBehaviour:
   maxLevel: 5
   baseWeight: 1
   levelWeightIncrease: 0.1
-  baseDamage: 8
+  baseDamage: 20
   penetration: 0
-  baseDesc: "\uAE30\uBCF8\uB370\uBBF8\uC9C0 8\r\n\uACF5\uACA9\uC18D\uB3C4 0.8\n\uCD1D\uC54C
+  baseDesc: "\uAE30\uBCF8\uB370\uBBF8\uC9C0 20\r\n\uACF5\uACA9\uC18D\uB3C4 0.8\n\uCD1D\uC54C
     \uAC1C\uC218 4"
   subWeaponPrefab: {fileID: 0}
   value1:

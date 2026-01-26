@@ -9,6 +9,7 @@ public enum PlayerState
     Play,
     LevelUp,
     Inventory,
+    Story,
     Option,
     GameEnd
 }
@@ -24,6 +25,15 @@ public class GameMgr : MonoBehaviour
     int score = 0;
     int killScore = 0;
     float uiTimer = 0f;
+
+    [Header("GameStory")]
+    public GameObject GameStartStory;
+    public GameObject GameBossStory;
+    public GameObject GameWinStory;
+    public Button StartCloseBtn;
+    public Button BossCloseBtn;
+    public Button WinCloseBtn;
+    bool isBossemergence = false;
 
     [Header("Inven Setting")]
     public Button inven_Btn;
@@ -60,6 +70,11 @@ public class GameMgr : MonoBehaviour
     [Header("Tutorial Setting")]
     public GameObject tutorialPanel;
     public Button tutoExit_Btn;
+
+    [Header("Supply Box")]
+    public GameObject boxPrefab;
+    public BoxCollider mapBounds;
+    float boxTimer = 60f;
 
     public PlayerState state = PlayerState.Tutorial;
 
@@ -163,6 +178,35 @@ public class GameMgr : MonoBehaviour
                 configPanel.SetActive(true);
             });
 
+        if (StartCloseBtn != null)
+            StartCloseBtn.onClick.AddListener(() =>
+            {
+                PlayClick();
+                GameStartStory.SetActive(false);
+                tutorialPanel.SetActive(true);
+                ChangeState(PlayerState.Tutorial);
+            });
+
+        if (BossCloseBtn != null)
+            BossCloseBtn.onClick.AddListener(() =>
+            {
+                PlayClick();
+                GameBossStory.SetActive(false);
+                ChangeState(PlayerState.Play);
+
+                nextBossTime -= bossInterval;
+                bossLevel++;
+                ZombieSpawner.Inst.SpawnBoss(bossLevel);
+            });
+
+        if (WinCloseBtn != null)
+            WinCloseBtn.onClick.AddListener(() =>
+            {
+                PlayClick();
+                GameWinStory.SetActive(false);
+                GameWin();
+            });
+
         ResetGame();
         GameStart();
     }
@@ -184,12 +228,22 @@ public class GameMgr : MonoBehaviour
             killText.text = killScore.ToString();
         }
 
+        boxTimer -= Time.deltaTime;
+
+        if (boxTimer <= 0f)
+        {
+            SpawnBox();
+            boxTimer = 60f;
+        }
+
         CheckDifficulty();
         CheckBossSpawn();
 
         if (playTime <= 0)
         {
-            state = PlayerState.GameEnd;
+            ChangeState(PlayerState.GameEnd);
+            Sound_Mgr.Inst.StopBGM();
+            GameWinStory.SetActive(true);
         }
     }
 
@@ -198,6 +252,47 @@ public class GameMgr : MonoBehaviour
         ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);
 
         Gun.Inst.SetWeapon(weapon);
+    }
+
+    public void GameWin()
+    {
+        Sound_Mgr.Inst.StopBGM();
+        Sound_Mgr.Inst.PlayEffSound("GameWin", 0.8f);
+
+        resultPanel.SetActive(true);
+
+        int survivedTime = Mathf.RoundToInt(900f - playTime);
+        int min = survivedTime / 60;
+        int sec = survivedTime % 60;
+
+        PlayerStats ps = PlayerStats.Inst;
+
+        infoText.text =
+            $"레벨 : {levelText.text}\n" +
+            $"공격력 배율 : {ps.DamageMultiplier:0.0}\n" +
+            $"공격속도 : {ps.AttackSpeed:0.00}\n" +
+            $"이동속도 : {ps.MoveSpeed:0.0}\n" +
+            $"자석범위 : {ps.MagnetRange:0.0}\n" +
+            $"체력 : {ps.MaxHp:0}\n" +
+            $"피해감소 : {(ps.DamageReduction * 100f):0}%\n" +
+            $"관통 : {ps.Penetration}\n\n" +
+            $"킬 : {killScore}\n" +
+            $"생존시간 : {min:00}:{sec:00}";
+
+        int bestScore = PlayerPrefs.GetInt("BestScore", 0);
+        bestScoreText.text = "최고기록\n" + bestScore + "\n\n\n" + "점수\n" + score;
+
+        if (score > bestScore)
+        {
+            PlayerPrefs.SetInt("BestScore", score);
+            bestScoreText.text = "최고기록\n" + score + "\n\n\n" + "점수\n" + score;
+            updateScoreText.text = "최고기록 갱신!";
+        }
+        else
+        {
+            updateScoreText.text = "";
+        }
+
     }
 
     public void GameEnd()
@@ -228,7 +323,7 @@ public class GameMgr : MonoBehaviour
             $"생존시간 : {min:00}:{sec:00}";
 
         int bestScore = PlayerPrefs.GetInt("BestScore", 0);
-        bestScoreText.text = "최고기록\n" + bestScore + "\n\n\n" + "점수\n" + score; 
+        bestScoreText.text = "최고기록\n" + bestScore + "\n\n\n" + "점수\n" + score;
 
         if (score > bestScore)
         {
@@ -255,6 +350,7 @@ public class GameMgr : MonoBehaviour
             case PlayerState.Tutorial:
             case PlayerState.LevelUp:
             case PlayerState.Inventory:
+            case PlayerState.Story:
             case PlayerState.Option:
             case PlayerState.GameEnd:
                 Time.timeScale = 0f;
@@ -275,6 +371,14 @@ public class GameMgr : MonoBehaviour
 
     void CheckBossSpawn()
     {
+        if (!isBossemergence && playTime <= nextBossTime)
+        {
+            isBossemergence = true;
+            GameBossStory.SetActive(true);
+            ChangeState(PlayerState.Story);
+            return;
+        }
+
         if (playTime <= nextBossTime)
         {
             nextBossTime -= bossInterval;
@@ -289,6 +393,17 @@ public class GameMgr : MonoBehaviour
         killScore++;
     }
 
+    void SpawnBox()
+    {
+        Bounds b = mapBounds.bounds;
+
+        float x = Random.Range(b.min.x + 1.5f, b.max.x - 1.5f);
+        float z = Random.Range(b.min.z + 1.5f, b.max.z - 1.5f);
+
+        Vector3 pos = new Vector3(x, 0f, z);
+        Instantiate(boxPrefab, pos, Quaternion.identity);
+    }
+
     void ResetGame()
     {
         playTime = 900f;
@@ -297,6 +412,7 @@ public class GameMgr : MonoBehaviour
 
         difficultyLevel = 0;
         bossLevel = 0;
+        isBossemergence = false;
 
         nextDifficultyTime = 840f;
         nextBossTime = 760f;
@@ -312,9 +428,9 @@ public class GameMgr : MonoBehaviour
 
         ZombieSpawner.Inst.ResetSpawner();
 
-        tutorialPanel.SetActive(true);
+        GameStartStory.SetActive(true);
 
-        ChangeState(PlayerState.Tutorial);
+        ChangeState(PlayerState.Story);
     }
 
     void PlayClick()

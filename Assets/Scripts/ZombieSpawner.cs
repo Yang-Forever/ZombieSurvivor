@@ -19,7 +19,6 @@ public class ZombieSpawner : MonoBehaviour
 
     [Header("Difficulty")]
     public int difficultyLevel = 0;
-    int normalCounter = 0;
 
     [Header("BombZombie Rate")]
     int spawnCount = 0;
