@@ -63,9 +63,6 @@ public class Player_Ctrl : MonoBehaviour
 
         MoveKB();          // 이동 판단만
         RotateMouse();     // 회전은 Update OK
-
-        if (Input.GetKeyDown(KeyCode.Alpha2))
-            LevelUp();
     }
 
     void MoveKB()

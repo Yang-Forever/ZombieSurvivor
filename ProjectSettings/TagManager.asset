@@ -10,6 +10,7 @@ TagManager:
   - Ground
   - Map
   - Bullet
+  - FxTemporaire
   layers:
   - Default
   - TransparentFX
@@ -46,4 +47,10 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Zombie
+    uniqueID: 1436912039
+    locked: 0
+  - name: Effects
+    uniqueID: 3340888923
     locked: 0

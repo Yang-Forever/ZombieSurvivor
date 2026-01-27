@@ -256,7 +256,7 @@ public class ItemRuntimeData
 
     public float GetFlameCoolDown()
     {
-        return 1.5f;
+        return 2.5f;
     }
 
     public float GetCoolTime()

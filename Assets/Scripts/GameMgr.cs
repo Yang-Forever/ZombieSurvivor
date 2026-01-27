@@ -17,7 +17,7 @@ public enum PlayerState
 public class GameMgr : MonoBehaviour
 {
     [Header("UI Setting")]
-    [HideInInspector] public float playTime = 900.0f;
+     public float playTime = 900.0f;
     public Text levelText;
     public Text timeText;
     public Text scoreText;
@@ -57,7 +57,7 @@ public class GameMgr : MonoBehaviour
     [Header("Boss")]
     int bossLevel = 0;
     float bossInterval = 240f;
-    float nextBossTime = 760f;
+    float nextBossTime = 660f;
 
     [Header("Result Setting")]
     public GameObject resultPanel;

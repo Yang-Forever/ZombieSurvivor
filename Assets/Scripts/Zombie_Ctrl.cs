@@ -383,35 +383,6 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
-    void PushZombiesStraight(Vector3 moveDir)
-    {
-        float radius = 0.7f;
-        float power = 0.12f;
-
-        if (Time.frameCount % 2 != 0)
-            return;
-
-        Collider[] cols = Physics.OverlapSphere(transform.position, radius, zombieLayer);
-
-        foreach (var col in cols)
-        {
-            Zombie_Ctrl z = col.GetComponentInParent<Zombie_Ctrl>();
-            if (z == null || z.isDead)
-                continue;
-
-            if (z.zomType != ZombieType.Normal)
-                continue;
-
-            Vector3 toZombie = z.transform.position - transform.position;
-            toZombie.y = 0f;
-
-            if (Vector3.Dot(moveDir, toZombie.normalized) < 0.2f)
-                continue;
-
-            z.transform.position += moveDir * power * Time.deltaTime;
-        }
-    }
-
     void Explosion()
     {
         if (isExplosion)
@@ -573,40 +544,6 @@ public class Zombie_Ctrl : MonoBehaviour
 
         RotateToPlayer();
         ChangeAnim(AnimState.trace, 0.12f);
-    }
-
-    void PushZombiesForward(Vector3 moveDir, float radius, float power)
-    {
-        if (Time.frameCount % 2 != 0) 
-            return;
-
-        Collider[] cols = Physics.OverlapSphere(transform.position, radius, zombieLayer);
-
-        foreach (var col in cols)
-        {
-            Zombie_Ctrl z = col.GetComponentInParent<Zombie_Ctrl>();
-            if (z == null || z.isDead)
-                continue;
-
-            if (z.zomType != ZombieType.Normal)
-                continue;
-
-            if (z.state == AnimState.attack)
-                continue;
-
-            Vector3 toZombie = z.transform.position - transform.position;
-            toZombie.y = 0f;
-
-            if (Vector3.Dot(moveDir, toZombie.normalized) < 0.1f)
-                continue;
-
-            Vector3 side = Vector3.Cross(Vector3.up, moveDir).normalized;
-            float sideSign = Vector3.Dot(side, toZombie) > 0 ? 1f : -1f;
-
-            Vector3 pushDir = (side * sideSign + moveDir * 0.3f).normalized;
-
-            z.transform.position += pushDir * power * Time.deltaTime;
-        }
     }
 
     void DashChargeUpdate()
