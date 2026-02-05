@@ -2,13 +2,16 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 플레이어 입력, 이동, 회전, 피격, 경험치 및 레벨업을 담당
+/// </summary>
 public class Player_Ctrl : MonoBehaviour
 {
     [Header("Player Move")]
     float h = 0.0f;
     float v = 0.0f;
-    float moveBlockRatio = 1f;
-    float moveCheckTimer = 0f;
+    float moveBlockRatio = 1f;  // 주변 적 밀집도에 따른 이동 속도 감속 비율
+    float moveCheckTimer = 0f;  // 이동 가능 여부 체크 추가용 타이머
     Vector3 moveDir;
     bool wantMove = false;
 
@@ -41,9 +44,10 @@ public class Player_Ctrl : MonoBehaviour
         UpdateHpUI();
     }
 
+    // 실제 이동 처리 (물리 프레임)
     void FixedUpdate()
     {
-        if (GameMgr.Inst.state != PlayerState.Play || isDie || !wantMove)
+        if (GameMgr.Inst.state != GameState.Play || isDie || !wantMove)
             return;
 
         float speed = PlayerStats.Inst.MoveSpeed * moveBlockRatio;
@@ -55,16 +59,17 @@ public class Player_Ctrl : MonoBehaviour
         transform.position = nextPos;
     }
 
-    // Update is called once per frame
+    // 입력 및 회전 처리
     void Update()
     {
-        if (GameMgr.Inst.state != PlayerState.Play || isDie)
+        if (GameMgr.Inst.state != GameState.Play || isDie)
             return;
 
-        MoveKB();          // 이동 판단만
-        RotateMouse();     // 회전은 Update OK
+        MoveKB();
+        RotateMouse();
     }
 
+    // 키보드 입력 기반 이동 처리
     void MoveKB()
     {
         h = Input.GetAxisRaw("Horizontal");
@@ -72,6 +77,7 @@ public class Player_Ctrl : MonoBehaviour
 
         Vector3 input = new Vector3(h, 0f, v);
 
+        // 입력이 없으면 정지
         if (input.sqrMagnitude < 0.01f)
         {
             wantMove = false;
@@ -81,6 +87,7 @@ public class Player_Ctrl : MonoBehaviour
 
         input.Normalize();
 
+        // 일정 주기마다 이동 가능 여부 검사 (과도한 체크 방지)
         moveCheckTimer += Time.deltaTime;
         if (moveCheckTimer >= 0.1f)
         {
@@ -91,33 +98,31 @@ public class Player_Ctrl : MonoBehaviour
         moveDir = input;
         wantMove = true;
 
+        // 로컬 좌표 기준 이동 애니메이션 값 계산
         Vector3 localMoveDir = transform.InverseTransformDirection(input);
         playerAnim.MoveAnim(localMoveDir.x, localMoveDir.z);
     }
 
+    // 마우스 위치를 기준으로 플레이어 회전
     void RotateMouse()
     {
-        // 플레이어 회전 (컴퓨터용 마우스 회전)
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-        // 바닥(y=0) 평면
         Plane plane = new Plane(Vector3.up, Vector3.zero);
 
         if (plane.Raycast(ray, out float distance))
         {
             Vector3 hitPoint = ray.GetPoint(distance);
 
-            // 플레이어 -> 마우스 위치 방향
             Vector3 dir = hitPoint - transform.position;
 
-            // 탑뷰니까 y는 무시 (수평 방향만)
             dir.y = 0f;
 
-            // 완전 정확한 회전
             transform.forward = dir.normalized;
         }
     }
 
+    // 맵 범위를 벗어나지 않도록 위치 제한
     void ClampToMap(ref Vector3 pos)
     {
         if (!mapBounds)
@@ -129,6 +134,7 @@ public class Player_Ctrl : MonoBehaviour
         pos.z = Mathf.Clamp(pos.z, b.min.z + mapPadding, b.max.z - mapPadding);
     }
 
+    // 주변 좀비 밀집도를 기반으로 이동 가능 여부 판단
     bool CanMove(Vector3 moveDir)
     {
         float radius = 0.3f;
@@ -149,6 +155,7 @@ public class Player_Ctrl : MonoBehaviour
             if (z.zomType == ZombieType.Explosion)
                 continue;
 
+            // 일반 좀비는 1, 보스는 3으로 가중치 계산
             if (z.zomType == ZombieType.Normal)
                 weightSum += 1;
             else if (z.zomType == ZombieType.Boss)
@@ -158,6 +165,7 @@ public class Player_Ctrl : MonoBehaviour
         return weightSum <= 4;
     }
 
+    // 데미지 처리 (피해 감소율 적용)
     public void HitDamage(int damage)
     {
         if (isDie)
@@ -181,6 +189,7 @@ public class Player_Ctrl : MonoBehaviour
         UpdateHpUI();
     }
 
+    // 체력 UI 갱신
     public void UpdateHpUI()
     {
         hpBar.fillAmount = PlayerStats.Inst.curHp / PlayerStats.Inst.MaxHp;
@@ -188,6 +197,7 @@ public class Player_Ctrl : MonoBehaviour
         hpText.text = $"{PlayerStats.Inst.curHp} / {PlayerStats.Inst.MaxHp}";
     }
 
+    // 사망 처리
     IEnumerator Die()
     {
         isDie = true;
@@ -197,6 +207,7 @@ public class Player_Ctrl : MonoBehaviour
         GameMgr.Inst.GameEnd();
     }
 
+    // 경험치 획득 및 레벨업 처리
     public void AddExp(int value)
     {
         curExp += value;
@@ -210,15 +221,18 @@ public class Player_Ctrl : MonoBehaviour
         expBar.fillAmount = curExp / maxExp;
     }
 
+    // 레벨업 처리
     void LevelUp()
     {
         Sound_Mgr.Inst.StopBGM();
+        Sound_Mgr.Inst.StopLoopEffect("Flame");
         Sound_Mgr.Inst.PlayEffSound("LevelUp", 0.8f);
 
         level++;
 
         LevelUpMgr.Inst.Show();
 
+        // 요구 경험치 증가 규칙
         if (maxExp <= 300)
         {
             maxExp *= 2;

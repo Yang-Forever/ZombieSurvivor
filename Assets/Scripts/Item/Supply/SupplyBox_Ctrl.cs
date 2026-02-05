@@ -5,6 +5,10 @@ public enum SupplyType
     Orbital
 }
 
+/// <summary>
+/// 총알에 맞으면 파괴
+/// 확률에 따라 아이템 드랍
+/// </summary>
 public class SupplyBox_Ctrl : MonoBehaviour
 {
     [Header("Drop Items")]
@@ -13,13 +17,14 @@ public class SupplyBox_Ctrl : MonoBehaviour
 
     Animator animator;
 
-    bool isDestroy = false;
+    bool isDestroy = false; // 중복 충돌 방지
 
     private void Awake()
     {
         animator = GetComponent<Animator>();
     }
 
+    // 총알 충돌 시 아이템 드랍 처리
     private void OnTriggerEnter(Collider other)
     {
         if (isDestroy)
@@ -27,12 +32,12 @@ public class SupplyBox_Ctrl : MonoBehaviour
 
         if (other.CompareTag("Bullet"))
         {
-            animator.SetBool("Destroy", true);
             DropItem();
-            Destroy(gameObject, 2.0f);
+            Destroy(gameObject, 0.5f);
         }
     }
 
+    // 확률에 따라 아이템 하나를 생성
     void DropItem()
     {
         isDestroy = true;
@@ -41,6 +46,7 @@ public class SupplyBox_Ctrl : MonoBehaviour
 
         int rand = Random.Range(1, 11);
 
+        // 30% 스킬 , 70% HP 포션
         if (rand <= 3)
             prefab = orbitalPrefab;
         else

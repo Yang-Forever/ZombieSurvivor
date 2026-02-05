@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 플레이어 주변에서 좀비를 스폰하고 난이도 및 보스 출현을 관리
+/// </summary>
 public class ZombieSpawner : MonoBehaviour
 {
     [Header("Target")]
@@ -36,9 +39,10 @@ public class ZombieSpawner : MonoBehaviour
         ResetBombCounter();
     }
 
+    // 스폰 타이머 갱신 및 좀비 생성 처리
     void Update()
     {
-        if (GameMgr.Inst.state != PlayerState.Play)
+        if (GameMgr.Inst.state != GameState.Play)
             return;
 
         spawnTimer += Time.deltaTime;
@@ -50,12 +54,15 @@ public class ZombieSpawner : MonoBehaviour
             SpawnZombie();
         }
     }
+
+    // 폭탄 좀비 등장 카운터 초기화
     void ResetBombCounter()
     {
         spawnCount = 0;
         nextBombAt = Random.Range(10, 16); // 10~15
     }
 
+    // 일반 좀비 스폰 처리
     void SpawnZombie()
     {
         if (!player || !mapBounds)
@@ -67,6 +74,7 @@ public class ZombieSpawner : MonoBehaviour
         ZombiePool.Inst.Spawn(DecideZombieType(), spawnPos);
     }
 
+    // 스폰될 좀비 타입 결정
     ZombieType DecideZombieType()
     {
         spawnCount++;
@@ -80,6 +88,7 @@ public class ZombieSpawner : MonoBehaviour
         return ZombieType.Normal;
     }
 
+    // 난이도 증가 처리
     public void IncreaseDifficulty(int level)
     {
         difficultyLevel = level;
@@ -91,6 +100,7 @@ public class ZombieSpawner : MonoBehaviour
         spawnPerSecond = 1.5f + level * 0.5f;
     }
 
+    // 보스 좀비 스폰 처리
     public void SpawnBoss(int bossLevel)
     {
         if (!player || !mapBounds)
@@ -117,13 +127,15 @@ public class ZombieSpawner : MonoBehaviour
         ZombiePool.Inst.SpawnBoss(spawnPos);
     }
 
-
+    // 보스 난이도 증가 처리
     public void IncreaseBossDifficulty(int level)
     {
         Zombie_Ctrl.BossHpMul = 1f + level * 0.5f;
         Zombie_Ctrl.BossSpeedMul = 1f + level * 0.05f;
         Zombie_Ctrl.BossDmgMul = 1f + level * 0.1f;
     }
+
+    // 플레이어 주변 유효 스폰 위치 탐색
     bool TryGetSpawnPosAroundPlayer(out Vector3 result)
     {
         const int maxTry = 30;
@@ -150,7 +162,7 @@ public class ZombieSpawner : MonoBehaviour
         return false;
     }
 
-
+    // 스포너 상태 초기화
     public void ResetSpawner()
     {
         difficultyLevel = 0;

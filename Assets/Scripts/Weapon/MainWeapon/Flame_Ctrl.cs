@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// 화염방사기 무기의 발사, 히트 판정, 과열 시스템을 관리
+/// </summary>
 public class Flame_Ctrl : MonoBehaviour
 {
     [Header("Reference")]
@@ -17,6 +20,7 @@ public class Flame_Ctrl : MonoBehaviour
     float heat = 0f;
     float hitTimer = 0f;
 
+    // 화염 무기 초기화
     public void Init(Transform firePos, ItemRuntimeData runtimeData)
     {
         this.firePos = firePos;
@@ -31,19 +35,24 @@ public class Flame_Ctrl : MonoBehaviour
         ApplyLength();
     }
 
+    // 화염 발사 시작
     public void StartFire()
     {
         if (isOverHeat)
             return;
+
 
         isFiring = true;
 
         if (flameFX != null && !flameFX.isPlaying)
             flameFX.Play();
 
+        Sound_Mgr.Inst.PlayLoopEffect("Flame", 0.6f);
+
         SetFlameActive(true);
     }
 
+    // 화염 발사 중지
     public void StopFire()
     {
         isFiring = false;
@@ -51,15 +60,19 @@ public class Flame_Ctrl : MonoBehaviour
         if (flameFX != null && flameFX.isPlaying)
             flameFX.Stop(true, ParticleSystemStopBehavior.StopEmitting);
 
+        Sound_Mgr.Inst.StopLoopEffect("Flame");
+
         SetFlameActive(false);
     }
 
+    // 히트 콜라이더 활성 / 비활성
     public void SetFlameActive(bool on)
     {
         if (hitCollider != null)
             hitCollider.enabled = on;
     }
 
+    // 화염 위치, 길이, 과열 상태 갱신
     void Update()
     {
         if (data == null || firePos == null)
@@ -73,6 +86,7 @@ public class Flame_Ctrl : MonoBehaviour
         HandleHeat();
     }
 
+    // 화염 지속 충돌 시 틱 데미지 처리
     void OnTriggerStay(Collider other)
     {
         if (!isFiring || isOverHeat)
@@ -95,6 +109,7 @@ public class Flame_Ctrl : MonoBehaviour
         hitTimer = data.GetFlameTickInterval();
     }
 
+    // 화염 과열 및 냉각 처리
     void HandleHeat()
     {
         if (!isFiring)
@@ -122,6 +137,7 @@ public class Flame_Ctrl : MonoBehaviour
         }
     }
 
+    // 화염 길이 및 파티클 속도 적용
     public void ApplyLength()
     {
         if (data == null || flameRoot == null)
@@ -135,11 +151,13 @@ public class Flame_Ctrl : MonoBehaviour
         main.startSpeed = data.GetLength();
     }
 
+    // 현재 과열 비율 반환
     public float GetHeatRatio()
     {
         return data == null ? 0f : heat / data.GetFlameMaxHeat();
     }
 
+    // 과열 상태 여부 반환
     public bool IsOverHeat()
     {
         return isOverHeat;

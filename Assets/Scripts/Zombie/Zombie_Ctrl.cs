@@ -10,6 +10,9 @@ public enum ZombieType
     None
 }
 
+/// <summary>
+/// 좀비의 이동, 공격, 피격, 사망 및 보스 패턴까지 포함한 전체 행동을 제어
+/// </summary>
 public class Zombie_Ctrl : MonoBehaviour
 {
     public ZombieType zomType = ZombieType.None;
@@ -57,7 +60,7 @@ public class Zombie_Ctrl : MonoBehaviour
     public Anim anim;
     Animator animator = null;
     SkinnedMeshRenderer[] skMeshRenderer;
-    float lodNear = 15f;
+    float lodNear = 20f;
     float lodMid = 23f;
 
     // 이동
@@ -112,6 +115,7 @@ public class Zombie_Ctrl : MonoBehaviour
     Color baseColor;
     Color hitColor = Color.red;
 
+    // 컴포넌트 및 초기 상태 설정
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
@@ -126,7 +130,7 @@ public class Zombie_Ctrl : MonoBehaviour
         resolveFrameOffset = Random.Range(0, 3);
     }
 
-    // Start is called before the first frame update
+    // 플레이어 및 맵 참조 설정
     void Start()
     {
         target = GameObject.Find("Player").transform;
@@ -134,6 +138,7 @@ public class Zombie_Ctrl : MonoBehaviour
         mapBounds = GameObject.Find("MapBounds").GetComponent<BoxCollider>();
     }
 
+    // 물리 이동 처리
     private void FixedUpdate()
     {
         if (!isInit || isDead || !wantMove)
@@ -148,10 +153,10 @@ public class Zombie_Ctrl : MonoBehaviour
         transform.position = nextPos;
     }
 
-    // Update is called once per frame
+    // 상태별 행동 처리
     void Update()
     {
-        if (GameMgr.Inst.state != PlayerState.Play)
+        if (GameMgr.Inst.state != GameState.Play)
             return;
 
         if (!isInit || isDead)
@@ -173,12 +178,13 @@ public class Zombie_Ctrl : MonoBehaviour
     }
 
     #region ZombieSetUp
-
+    // 풀 참조 설정
     public void SetPool(ZombiePool p)
     {
         pool = p;
     }
 
+    // 좀비 타입별 기본 스탯 설정
     void ZombieSetUp()
     {
         switch (zomType)
@@ -212,6 +218,7 @@ public class Zombie_Ctrl : MonoBehaviour
         }
     }
 
+    // 난이도 보정 스탯 적용
     void ApplyDifficultyStat()
     {
         if (zomType == ZombieType.Boss)
@@ -230,6 +237,7 @@ public class Zombie_Ctrl : MonoBehaviour
         currHp = maxHp;
     }
 
+    // 풀에서 재사용 시 초기화
     public void ResetZombie()
     {
         ZombieSetUp();
@@ -270,7 +278,7 @@ public class Zombie_Ctrl : MonoBehaviour
     #endregion
 
     #region Zombie Action
-
+    // 일반 좀비 이동 로직
     void ZombieMove()
     {
         wantMove = false;
@@ -303,6 +311,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
+    // 밀집 회피 벡터 계산
     Vector3 GetSeparationVector()
     {
         float radius = 0.6f;
@@ -346,6 +355,8 @@ public class Zombie_Ctrl : MonoBehaviour
         return Vector3.ClampMagnitude(result, 0.15f);
 
     }
+
+    // 맵 범위 제한
     void ClampToMap(ref Vector3 pos)
     {
         if (!mapBounds)
@@ -357,6 +368,7 @@ public class Zombie_Ctrl : MonoBehaviour
         pos.z = Mathf.Clamp(pos.z, b.min.z + mapPadding, b.max.z - mapPadding);
     }
 
+    // 폭탄 좀비 이동
     void BombZombieMove()
     {
         wantMove = false;
@@ -383,6 +395,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
+    // 폭발 처리
     void Explosion()
     {
         if (isExplosion)
@@ -403,6 +416,7 @@ public class Zombie_Ctrl : MonoBehaviour
         pool.ReturnZombie(this);
     }
 
+    // 공격 시작 처리
     void ZombieAttack()
     {
         if (state == AnimState.attack)
@@ -422,6 +436,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.attack, 0.12f);
     }
 
+    // 공격 히트 이벤트
     public void OnAtkHit()
     {
         if (state != AnimState.attack)
@@ -442,11 +457,13 @@ public class Zombie_Ctrl : MonoBehaviour
         player.HitDamage(damage);
     }
 
+    // 공격 종료 이벤트
     public void OnAttackEnd()
     {
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
+    // 플레이어 방향 회전
     void RotateToPlayer()
     {
         if (!target) return;
@@ -465,6 +482,7 @@ public class Zombie_Ctrl : MonoBehaviour
         );
     }
 
+    // 애니메이션 전환 처리
     void ChangeAnim(AnimState newState, float crossTime = 0.0f)
     {
         if (state == newState)
@@ -490,6 +508,7 @@ public class Zombie_Ctrl : MonoBehaviour
     #endregion
 
     #region Boss Action
+    // 보스 행동 메인 루프
     void BossMove()
     {
         if (isDashing)
@@ -520,6 +539,7 @@ public class Zombie_Ctrl : MonoBehaviour
         }
     }
 
+    // 보스 기본 추적 이동
     void BossLeadMove()
     {
         wantMove = false;
@@ -546,6 +566,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
+    // 돌진 차징 상태 업데이트
     void DashChargeUpdate()
     {
         wantMove = false;
@@ -559,6 +580,7 @@ public class Zombie_Ctrl : MonoBehaviour
             StartDash();
     }
 
+    // 돌진 차징 시작
     void StartDashCharge()
     {
         patternTimer = patternCool;
@@ -584,7 +606,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.rage, 0.12f);
     }
 
-
+    // 돌진 실행 시작
     void StartDash()
     {
         isChargingDash = false;
@@ -597,6 +619,7 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.dash, 0.12f);
     }
 
+    // 돌진 중 이동 처리
     void DashUpdate()
     {
         wantMove = true;
@@ -610,7 +633,7 @@ public class Zombie_Ctrl : MonoBehaviour
             EndDash();
     }
 
-
+    // 돌진 종료 처리
     public void EndDash()
     {
         isDashing = false;
@@ -622,6 +645,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
     #region Hit Action
 
+    // 데미지 처리 및 사망 판정
     public void HitDamage(float damage)
     {
         if (currHp <= 0)
@@ -652,6 +676,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
     }
 
+    // 피격 이펙트 시작
     void HitEffect()
     {
         if (hitCo != null)
@@ -663,6 +688,7 @@ public class Zombie_Ctrl : MonoBehaviour
         hitCo = StartCoroutine(HitEffectCo());
     }
 
+    // 피격 색상 연출 코루틴
     IEnumerator HitEffectCo()
     {
         Hit(1f);
@@ -670,6 +696,7 @@ public class Zombie_Ctrl : MonoBehaviour
         Hit(0f);
     }
 
+    // 히트 컬러 적용
     void Hit(float v)
     {
         Color col = Color.Lerp(baseColor, hitColor, v);
@@ -682,6 +709,7 @@ public class Zombie_Ctrl : MonoBehaviour
         }
     }
 
+    // 히트 컬러 초기화
     void ResetHitColor()
     {
         foreach (var r in skMeshRenderer)
@@ -695,7 +723,7 @@ public class Zombie_Ctrl : MonoBehaviour
     #endregion
 
     #region Die Action
-
+    // 일반 좀비 사망 처리
     IEnumerator Die()
     {
         // 이미 죽음 상태라면 중복 처리 방지
@@ -721,6 +749,7 @@ public class Zombie_Ctrl : MonoBehaviour
         pool.ReturnZombie(this);
     }
 
+    // 보스 사망 처리
     IEnumerator BossDie()
     {
         ChangeAnim(AnimState.die, 0.12f);
@@ -738,6 +767,7 @@ public class Zombie_Ctrl : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // 일반 경험치 생성
     void SpawnExp(int value)
     {
         ExpObj_Ctrl exp = ExpPool.Inst.OnGetExp();
@@ -750,6 +780,7 @@ public class Zombie_Ctrl : MonoBehaviour
         exp.SetUpExp(value);
     }
 
+    // 보스 경험치 생성
     void SpawnBossExp(int value)
     {
         ExpObj_Ctrl exp = ExpPool.Inst.CreateBossExp();
@@ -765,13 +796,14 @@ public class Zombie_Ctrl : MonoBehaviour
     #endregion
 
     #region Animation LOD
-
+    // 스킨드 메시 렌더러 토글
     void SetSkinnedMesh(bool on)
     {
         foreach (var r in skMeshRenderer)
             r.enabled = on;
     }
 
+    // 거리 기반 애니메이션 LOD 처리
     void UpdateLOD()
     {
         if (zomType == ZombieType.Boss)
@@ -801,6 +833,7 @@ public class Zombie_Ctrl : MonoBehaviour
 
     #endregion
 
+    // 보스 돌진 중 벽 충돌 시 돌진 종료 처리
     private void OnCollisionEnter(Collision collision)
     {
         if (!(zomType == ZombieType.Boss))

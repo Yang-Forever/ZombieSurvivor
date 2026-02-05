@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 타이틀 씬 관리
+/// </summary>
 public class TitleMgr : MonoBehaviour
 {
     [Header("UI Setting")]
@@ -66,6 +69,7 @@ public class TitleMgr : MonoBehaviour
             });
     }
 
+    // UI 클릭 사운드
     void PlayClick()
     {
         Sound_Mgr.Inst.PlayGUISound("UI_Click", 0.4f);

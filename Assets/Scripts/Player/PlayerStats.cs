@@ -1,5 +1,9 @@
 using UnityEngine;
 
+/// <summary>
+/// 플레이어의 모든 스탯을 관리하는 클래스
+/// 기본 스탯 + 보너스 스탯을 합산하여 최종 값을 제공
+/// </summary>
 public class PlayerStats : MonoBehaviour
 {
     [Header("Base Stats")]
@@ -19,24 +23,28 @@ public class PlayerStats : MonoBehaviour
     public int bonusPenetration;
 
     [HideInInspector] public float curHp;
-    public float DamageMultiplier =>
-        baseDamageMultiplier + bonusDamageMultiplier;
 
-    public float AttackSpeed =>
-        baseAttackSpeed + bonusAttackSpeed;
+    // 최종 공격력 배율
+    public float DamageMultiplier => baseDamageMultiplier + bonusDamageMultiplier;
 
-    public float MoveSpeed =>
-        baseMoveSpeed + bonusMoveSpeed;
+    // 최종 공격 속도
+    public float AttackSpeed => baseAttackSpeed + bonusAttackSpeed;
 
-    public float MagnetRange =>
-        baseMagnetRange * (1f + bonusMagnetRangeMultiplier);
+    // 최종 이동 속도
+    public float MoveSpeed => baseMoveSpeed + bonusMoveSpeed;
 
+    // 최종 자석 범위
+    public float MagnetRange => baseMagnetRange * (1f + bonusMagnetRangeMultiplier);
+
+    // 최종 최대 체력
     public float MaxHp =>
         baseMaxHp + bonusMaxHp;
 
+    // 총알 관통
     public int Penetration =>
         bonusPenetration;
 
+    // 피해 감소
     public float DamageReduction =>
         bonusReduction;
 
@@ -49,26 +57,31 @@ public class PlayerStats : MonoBehaviour
         curHp = baseMaxHp;
     }
 
+    // 공격력 배율 증가
     public void AddDmgMultyplier(float value)
     {
         bonusDamageMultiplier += value;
     }
 
+    // 공격 속도 증가
     public void AddAtkSpeed(float value)
     {
         bonusAttackSpeed += value;
     }
 
+    // 이동 속도 증가
     public void AddMvSpeed(float value)
     {
         bonusMoveSpeed += value;
     }
 
+    // 자석 범위 배율 증가
     public void AddMagnetRange(float value)
     {
         bonusMagnetRangeMultiplier += value;
     }
 
+    // 최대 체력 증가 + 증가한 만큼 현재 체력 보정
     public void AddHp(float value)
     {
         float temp = MaxHp;
@@ -81,16 +94,19 @@ public class PlayerStats : MonoBehaviour
         Player_Ctrl.Inst.UpdateHpUI();
     }
 
+    // 피해 감소율 증가
     public void AddReduction(float value)
     {
         bonusReduction += value;
     }
 
+    // 관통 수 증가
     public void AddPenetration(int value)
     {
         bonusPenetration += value;
     }
 
+    // 모든 보너스 스텟 초기화
     public void ResetStats()
     {
         bonusDamageMultiplier = 0f;

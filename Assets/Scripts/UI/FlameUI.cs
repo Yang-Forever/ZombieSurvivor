@@ -1,6 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// 화염방사기 전용 과열 UI
+/// 현재 열기 비율에 따라 게이지와 색상을 변경
+/// </summary>
 public class FlameUI : MonoBehaviour
 {
     [Header("UI")]
@@ -23,6 +27,7 @@ public class FlameUI : MonoBehaviour
         if (flame == null || heatFill == null)
             return;
 
+        // 현재 열기 비율 (0~1)
         float ratio = flame.GetHeatRatio();
         heatFill.fillAmount = ratio;
 
@@ -40,6 +45,7 @@ public class FlameUI : MonoBehaviour
         }
     }
 
+    // 화염 무기 사용 여부에 따라 UI 표시/숨김
     public void SetVisible(bool isOn)
     {
         if (gameObject.activeSelf != isOn)

@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public enum PlayerState
+// 게임 상태
+public enum GameState
 {
     Tutorial,
     Play,
@@ -14,17 +15,21 @@ public enum PlayerState
     GameEnd
 }
 
+/// <summary>
+/// 게임 전체 흐름 및 상태 관리
+/// 시간, UI, 난이도, 보스, 결과 처리 등
+/// </summary>
 public class GameMgr : MonoBehaviour
 {
     [Header("UI Setting")]
-     public float playTime = 900.0f;
+    public float playTime = 900.0f;
     public Text levelText;
     public Text timeText;
     public Text scoreText;
     public Text killText;
     int score = 0;
     int killScore = 0;
-    float uiTimer = 0f;
+    float uiTimer = 0f;                 // UI 갱신 간격용 타이머
 
     [Header("GameStory")]
     public GameObject GameStartStory;
@@ -33,7 +38,7 @@ public class GameMgr : MonoBehaviour
     public Button StartCloseBtn;
     public Button BossCloseBtn;
     public Button WinCloseBtn;
-    bool isBossemergence = false;
+    bool isBossemergence = false;       // 보스 첫 등장 여부 체크
 
     [Header("Inven Setting")]
     public Button inven_Btn;
@@ -51,13 +56,13 @@ public class GameMgr : MonoBehaviour
 
     [Header("Difficulty")]
     public int difficultyLevel = 0;
-    float difficultyInterval = 60f;
-    float nextDifficultyTime = 840f;
+    float difficultyInterval = 60f;     // 난이도 증가 주기
+    float nextDifficultyTime = 840f;    // 다음 난이도 증가 시점
 
     [Header("Boss")]
     int bossLevel = 0;
-    float bossInterval = 240f;
-    float nextBossTime = 660f;
+    float bossInterval = 240f;          // 보스 등장 주기
+    float nextBossTime = 660f;          // 다음 보스 등장 시점
 
     [Header("Result Setting")]
     public GameObject resultPanel;
@@ -73,10 +78,10 @@ public class GameMgr : MonoBehaviour
 
     [Header("Supply Box")]
     public GameObject boxPrefab;
-    public BoxCollider mapBounds;
-    float boxTimer = 60f;
+    public BoxCollider mapBounds;       // 맵 범위
+    float boxTimer = 30f;               // 박스 생성 주기
 
-    public PlayerState state = PlayerState.Tutorial;
+    public GameState state = GameState.Tutorial;
 
     public static GameMgr Inst;
 
@@ -94,13 +99,13 @@ public class GameMgr : MonoBehaviour
         if (config_Btn != null)
             config_Btn.onClick.AddListener(() =>
             {
-                if (state != PlayerState.Play)
+                if (state != GameState.Play)
                     return;
 
                 PlayClick();
 
                 configPanel.SetActive(true);
-                ChangeState(PlayerState.Option);
+                ChangeState(GameState.Option);
             });
 
         if (configCloseBtn != null)
@@ -108,18 +113,18 @@ public class GameMgr : MonoBehaviour
             {
                 PlayClick();
                 configPanel.SetActive(false);
-                ChangeState(PlayerState.Play);
+                ChangeState(GameState.Play);
             });
 
         if (inven_Btn != null)
             inven_Btn.onClick.AddListener(() =>
             {
                 PlayClick();
-                if (state != PlayerState.Play)
+                if (state != GameState.Play)
                     return;
 
                 invenPanel.SetActive(true);
-                ChangeState(PlayerState.Inventory);
+                ChangeState(GameState.Inventory);
             });
 
         if (invenCloseBtn != null)
@@ -127,7 +132,7 @@ public class GameMgr : MonoBehaviour
             {
                 PlayClick();
                 invenPanel.SetActive(false);
-                ChangeState(PlayerState.Play);
+                ChangeState(GameState.Play);
             });
 
         if (ExitBtn != null)
@@ -159,7 +164,7 @@ public class GameMgr : MonoBehaviour
             {
                 PlayClick();
                 tutorialPanel.SetActive(false);
-                ChangeState(PlayerState.Play);
+                ChangeState(GameState.Play);
             });
 
         if (tuto_Btn != null)
@@ -184,7 +189,7 @@ public class GameMgr : MonoBehaviour
                 PlayClick();
                 GameStartStory.SetActive(false);
                 tutorialPanel.SetActive(true);
-                ChangeState(PlayerState.Tutorial);
+                ChangeState(GameState.Tutorial);
             });
 
         if (BossCloseBtn != null)
@@ -192,7 +197,7 @@ public class GameMgr : MonoBehaviour
             {
                 PlayClick();
                 GameBossStory.SetActive(false);
-                ChangeState(PlayerState.Play);
+                ChangeState(GameState.Play);
 
                 nextBossTime -= bossInterval;
                 bossLevel++;
@@ -213,11 +218,12 @@ public class GameMgr : MonoBehaviour
 
     void Update()
     {
-        if (state != PlayerState.Play)
+        if (state != GameState.Play)
             return;
 
         playTime -= Time.deltaTime;
 
+        // 최적화를 위한 UI 갱신
         uiTimer += Time.deltaTime;
         if (uiTimer >= 0.1f)
         {
@@ -233,20 +239,22 @@ public class GameMgr : MonoBehaviour
         if (boxTimer <= 0f)
         {
             SpawnBox();
-            boxTimer = 60f;
+            boxTimer = 30f;
         }
 
         CheckDifficulty();
         CheckBossSpawn();
 
+        // 게임 승리
         if (playTime <= 0)
         {
-            ChangeState(PlayerState.GameEnd);
+            ChangeState(GameState.GameEnd);
             Sound_Mgr.Inst.StopBGM();
             GameWinStory.SetActive(true);
         }
     }
 
+    // 게임 시작 시 기본무기 세팅
     public void GameStart()
     {
         ItemRuntimeData weapon = LevelUpMgr.Inst.FindRuntimeWeapon(MainWeaponType.Pistol);
@@ -254,6 +262,39 @@ public class GameMgr : MonoBehaviour
         Gun.Inst.SetWeapon(weapon);
     }
 
+    // 게임 상태 초기화
+    void ResetGame()
+    {
+        playTime = 900f;
+        score = 0;
+        killScore = 0;
+
+        difficultyLevel = 0;
+        bossLevel = 0;
+        isBossemergence = false;
+
+        nextDifficultyTime = 840f;
+        nextBossTime = 760f;
+
+        PlayerStats.Inst.ResetStats();
+
+        Zombie_Ctrl.NormalHpMul = 1f;
+        Zombie_Ctrl.NormalSpeedMul = 1f;
+        Zombie_Ctrl.NormalDmgMul = 1f;
+        Zombie_Ctrl.BossHpMul = 1f;
+        Zombie_Ctrl.BossSpeedMul = 1f;
+        Zombie_Ctrl.BossDmgMul = 1f;
+
+        ZombieSpawner.Inst.ResetSpawner();
+
+        GameStartStory.SetActive(true);
+
+        ChangeState(GameState.Story);
+    }
+
+    #region Game Result
+
+    // 승리 처리
     public void GameWin()
     {
         Sound_Mgr.Inst.StopBGM();
@@ -295,9 +336,10 @@ public class GameMgr : MonoBehaviour
 
     }
 
+    // 패배 처리
     public void GameEnd()
     {
-        ChangeState(PlayerState.GameEnd);
+        ChangeState(GameState.GameEnd);
 
         Sound_Mgr.Inst.StopBGM();
         Sound_Mgr.Inst.PlayEffSound("GameEnd", 0.8f);
@@ -336,28 +378,26 @@ public class GameMgr : MonoBehaviour
             updateScoreText.text = "";
         }
     }
+    #endregion
 
-    public void ChangeState(PlayerState newState)
+    // 플레이 상태 변경
+    public void ChangeState(GameState newState)
     {
         state = newState;
 
         switch (state)
         {
-            case PlayerState.Play:
+            case GameState.Play:
                 Time.timeScale = 1f;
                 break;
 
-            case PlayerState.Tutorial:
-            case PlayerState.LevelUp:
-            case PlayerState.Inventory:
-            case PlayerState.Story:
-            case PlayerState.Option:
-            case PlayerState.GameEnd:
+            default:
                 Time.timeScale = 0f;
                 break;
         }
     }
 
+    // 플레이 타임 기준 난이도 증가
     void CheckDifficulty()
     {
         if (playTime <= nextDifficultyTime)
@@ -369,13 +409,14 @@ public class GameMgr : MonoBehaviour
 
     }
 
+    // 플레이 타임 기준 보스 생성
     void CheckBossSpawn()
     {
         if (!isBossemergence && playTime <= nextBossTime)
         {
             isBossemergence = true;
             GameBossStory.SetActive(true);
-            ChangeState(PlayerState.Story);
+            ChangeState(GameState.Story);
             return;
         }
 
@@ -387,12 +428,14 @@ public class GameMgr : MonoBehaviour
         }
     }
 
+    // 좀비 처치 시 점수 휙득
     public void KillZombie(int value)
     {
         score += value + difficultyLevel * 10;
         killScore++;
     }
 
+    // 맵 범위 내 랜덤 위치 박스 생성
     void SpawnBox()
     {
         Bounds b = mapBounds.bounds;
@@ -403,42 +446,15 @@ public class GameMgr : MonoBehaviour
         Vector3 pos = new Vector3(x, 0f, z);
         Instantiate(boxPrefab, pos, Quaternion.identity);
     }
-
-    void ResetGame()
-    {
-        playTime = 900f;
-        score = 0;
-        killScore = 0;
-
-        difficultyLevel = 0;
-        bossLevel = 0;
-        isBossemergence = false;
-
-        nextDifficultyTime = 840f;
-        nextBossTime = 760f;
-
-        PlayerStats.Inst.ResetStats();
-
-        Zombie_Ctrl.NormalHpMul = 1f;
-        Zombie_Ctrl.NormalSpeedMul = 1f;
-        Zombie_Ctrl.NormalDmgMul = 1f;
-        Zombie_Ctrl.BossHpMul = 1f;
-        Zombie_Ctrl.BossSpeedMul = 1f;
-        Zombie_Ctrl.BossDmgMul = 1f;
-
-        ZombieSpawner.Inst.ResetSpawner();
-
-        GameStartStory.SetActive(true);
-
-        ChangeState(PlayerState.Story);
-    }
-
+    
+    // UI 클릭 사운드
     void PlayClick()
     {
         Sound_Mgr.Inst.PlayGUISound("UI_Click", 0.4f);
     }
 
-    public static bool IsPointerOverUIObject() //UGUI의 UI들이 먼저 피킹되는지 확인하는 함수
+    // UI 위에 마우스(클릭)이 있는지 판별
+    public static bool IsPointerOverUIObject()
     {
         PointerEventData a_EDCurPos = new PointerEventData(EventSystem.current);
 

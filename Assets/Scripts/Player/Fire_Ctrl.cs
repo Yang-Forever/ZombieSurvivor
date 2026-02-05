@@ -1,5 +1,9 @@
 using UnityEngine;
 
+/// <summary>
+/// 플레이어 무기 발사 전반을 제어
+/// 일반 탄환 무기와 화염방사기(레이저 계열)를 구분하여 처리한다
+/// </summary>
 public class Fire_Ctrl : MonoBehaviour
 {
     public Transform firePos = null;
@@ -8,7 +12,7 @@ public class Fire_Ctrl : MonoBehaviour
 
     private float fireTimer;
 
-    [Header("Laser")]
+    [Header("Flame")]
     public Flame_Ctrl flame;
     [SerializeField] FlameUI flameUI;
     bool flameInited = false;
@@ -33,18 +37,20 @@ public class Fire_Ctrl : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (GameMgr.Inst.state != PlayerState.Play)
+        if (GameMgr.Inst.state != GameState.Play)
             return;
 
         data = Gun.Inst.curWeapon;
         if (data == null)
             return;
 
+        // 화염방사기 여부 판단
         bool isFlameWeapon = data.baseData.mainWeapon == MainWeaponType.Flamethrower;
         flameUI.SetVisible(isFlameWeapon);
 
         if (isFlameWeapon)
         {
+            // 화염 무기 최초 진입 시 초기화
             if (!flameInited)
             {
                 flame.Init(firePos, data);
@@ -55,6 +61,7 @@ public class Fire_Ctrl : MonoBehaviour
         }
         else
         {
+            // 다른 무기로 전환 시 화염 상태 정리
             if (flameInited)
             {
                 flame.StopFire();
@@ -66,6 +73,7 @@ public class Fire_Ctrl : MonoBehaviour
         }
     }
 
+    // 일반 무기 발사 처리
     void Fire(ItemRuntimeData runtimeData)
     {
         if (fireTimer > 0.0f)
@@ -80,10 +88,12 @@ public class Fire_Ctrl : MonoBehaviour
             else
                 StraightFire();
 
+            // 무기 공격 간격 적용
             fireTimer = runtimeData.GetInterval();
         }
     }
 
+    // 직선 발사 무기 처리
     void StraightFire()
     {
         Bullet_Ctrl bullet = BulletPool.Inst.Get();
@@ -98,6 +108,7 @@ public class Fire_Ctrl : MonoBehaviour
         bullet.SetPenetration(penetration);
     }
 
+    // 샷건 계열 확산 발사 처리
     void SpreadFire()
     {
         int pelletCount = data.GetPelletCount();
@@ -107,6 +118,7 @@ public class Fire_Ctrl : MonoBehaviour
         float damage = data.baseData.baseDamage * data.GetDamageRatio() * PlayerStats.Inst.DamageMultiplier;
         int penetration = data.baseData.penetration + PlayerStats.Inst.Penetration;
 
+        // 전체 각도를 pellet 개수로 분할
         float step = (maxAngle * 2f) / (pelletCount - 1);
         float startAngle = -maxAngle;
 
@@ -125,6 +137,7 @@ public class Fire_Ctrl : MonoBehaviour
         }
     }
 
+    // 화염방사기 입력 및 사운드 처리
     void LaserUpdate()
     {
         if (flame == null)
@@ -133,8 +146,12 @@ public class Fire_Ctrl : MonoBehaviour
         bool isPressing = Input.GetMouseButton(0) && !GameMgr.IsPointerOverUIObject();
 
         if (isPressing)
+        {
             flame.StartFire();
+        }
         else if(!isPressing)
+        {
             flame.StopFire();
+        }
     }
 }

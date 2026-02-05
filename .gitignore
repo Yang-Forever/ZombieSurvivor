@@ -26,3 +26,12 @@ UserSettings/
 
 .DS_Store
 Thumbs.db
+
+Build/
+Builds/
+Test/
+*_Data/
+*.exe
+*.app
+*.apk
+*.aab

@@ -1,6 +1,8 @@
-using System.Reflection;
 using UnityEngine;
 
+/// <summary>
+/// 플레이어 주변 범위 내 적을 공격하는 서브 무기
+/// </summary>
 public class SubWeaponKnife : SubWeaponBase
 {
     public LayerMask zombieLayer;
@@ -9,6 +11,7 @@ public class SubWeaponKnife : SubWeaponBase
 
     Collider[] hit = new Collider[100];
 
+    // 플레이어 트랜스폼 참조 설정
     private void Awake()
     {
         Player_Ctrl player = FindObjectOfType<Player_Ctrl>();
@@ -16,6 +19,7 @@ public class SubWeaponKnife : SubWeaponBase
             playerTr = player.transform;
     }
 
+    // 나이프 공격 실행
     public override void Use()
     {
         if (data == null)
@@ -49,6 +53,7 @@ public class SubWeaponKnife : SubWeaponBase
         ResetCooldown();
     }
 
+    // 공격 범위 기즈모 표시
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;

@@ -1,36 +1,44 @@
 using UnityEngine;
 
+// 아이템 종류
 public enum ItemType
 {
    Passive, MainWeapon, SubWeapon
 }
 
+// 메인 무기 종류
 public enum MainWeaponType
 {
     None, Pistol, Rifle, Shotgun, Flamethrower
 }
 
+// 패시브 종류
 public enum PassiveType
 {
     None, AtkSpeed, AtkDamage, MoveSpeed, HpMax, MagnetRange, Reduction, Penetration
 }
 
+// 밸류3번 종류
 public enum Value3Type
 {
     None, PelletCount, FlameTickLength, ExplosionRange, KnifeRange
 }
+
+// 밸류 표시값 종류
 public enum ValueDisplayType
 {
     Raw,        // 그대로 표시
     Percent     // 퍼센트 표시
 }
 
+// 특정 조건(레벨 별로 적용되는 패시브) 패시브
 [System.Serializable]
-public class ConditionalPassive // 특정 조건(레벨 별로 적용되는 패시브) 패시브
+public class ConditionalPassive
 {
     public PassiveType type;
     public int[] activeLevels;
 }
+
 
 [CreateAssetMenu(fileName = "Item", menuName = "SO/Item")]
 public class ItemData : ScriptableObject

@@ -1,5 +1,10 @@
 using UnityEngine;
 
+/// <summary>
+/// 아이템 레벨, 소유 여부, 등장 가능 여부 관리
+/// 패시브 / 무기 / 서브무기 효과 적용
+/// 실시간 스텟 계산 및 UI 설명 텍스트 출력
+/// </summary>
 [System.Serializable]
 public class ItemRuntimeData
 {
@@ -17,6 +22,7 @@ public class ItemRuntimeData
     }
 
     #region 스텟 적용 함수
+    // 아이템 종류에 따른 효과 적용
     public void Apply()
     {
         switch (baseData.itemType)
@@ -35,6 +41,7 @@ public class ItemRuntimeData
         }
     }
 
+    // 패시브 종류에 따른 효과 적용
     void ApplyPassive()
     {
         int level = curLevel;      // 1-based
@@ -43,6 +50,7 @@ public class ItemRuntimeData
         if (level < 0)
             return;
 
+        // 기본 패시브 스텟 적용
         for (int i = 0; i < baseData.passiveType.Length; i++)
         {
             PassiveType type = baseData.passiveType[i];
@@ -83,6 +91,7 @@ public class ItemRuntimeData
             }
         }
 
+        // 조건부 패시브 적용
         if (baseData.conditionalPassives == null)
             return;
 
@@ -105,6 +114,7 @@ public class ItemRuntimeData
         }
     }
 
+    // 특정 레벨에서 조건부 패시브가 활성화되는지 확인
     bool IsConditionalActive(PassiveType type, int level)
     {
         if (baseData.conditionalPassives == null)
@@ -124,6 +134,7 @@ public class ItemRuntimeData
         return false;
     }
 
+    // 메인 무기 적용
     void ApplyWeapon()
     {
         // 최초 획득 시 장착
@@ -133,6 +144,7 @@ public class ItemRuntimeData
         }
     }
 
+    // 서브 무기 적용
     void ApplySubWeapon()
     {
         // 최초 휙득 시 장착
@@ -142,6 +154,7 @@ public class ItemRuntimeData
         }
     }
 
+    // 배열 접근용 값 추출
     float GetValue(float[] arr, int idx)
     {
         if (arr == null)
@@ -155,6 +168,7 @@ public class ItemRuntimeData
     #endregion
 
     #region 실시간 참조 함수
+    // 레벨 기반 가중치 (등장 확률)
     public float GetWeight()
     {
         if (!canAppear)
@@ -163,6 +177,7 @@ public class ItemRuntimeData
         return baseData.baseWeight + curLevel * baseData.levelWeightIncrease;
     }
 
+    // 누적 데미지 배율 계산
     public float GetDamageRatio()
     {
         float sum = 0f;
@@ -173,6 +188,7 @@ public class ItemRuntimeData
         return 1f + sum;
     }
 
+    // 공격속도 계산 (발사 간격)
     public float GetInterval()
     {
         float baseInterval = baseData.value1[0];
@@ -189,6 +205,7 @@ public class ItemRuntimeData
         return Mathf.Max(0.03f, interval);
     }
 
+    // 샷건 펠릿(분열 총알) 개수 계산
     public int GetPelletCount()
     {
         int result = 0;
@@ -205,6 +222,7 @@ public class ItemRuntimeData
         return result;
     }
 
+    // 화염방사기 길이 계산
     public float GetLength()
     {
         float length = baseData.value3[0];
@@ -215,6 +233,7 @@ public class ItemRuntimeData
         return length;
     }
 
+    // 화염방사기 틱 데미지 계산
     public float GetFlameTickDamage()
     {
         return baseData.baseDamage
@@ -222,6 +241,7 @@ public class ItemRuntimeData
             * PlayerStats.Inst.DamageMultiplier;
     }
 
+    // 화염방사기 틱 간격 계산
     public float GetFlameTickInterval()
     {
         // 기본 틱 간격
@@ -245,20 +265,25 @@ public class ItemRuntimeData
         return Mathf.Clamp(interval, 0.02f, baseTick);
     }
 
+    // 화염방사기 초당 증가량
     public float GetFlameHeatIncrease()
     {
-        return 1f; // 초당 증가량 (고정 or SO화 가능)
+        return 1f;
     }
+
+    // 화염방사기 최대량
     public float GetFlameMaxHeat()
     {
         return 10f;
     }
 
+    // 화염방사기 초당 감소량
     public float GetFlameCoolDown()
     {
         return 2.5f;
     }
 
+    // 쿨타임 감소량 계산
     public float GetCoolTime()
     {
         float result = baseData.value1[0];
@@ -269,6 +294,8 @@ public class ItemRuntimeData
         return result;
     }
 
+    // 배열에 들어있는 값을 레벨 기준으로 누적해서 합산
+    // 패시브와 무기는 누적 방식이 다르기 때문에 분기 처리
     float GetAccumulatedValue(float[] arr, int curLevel)
     {
         if (arr == null)
@@ -290,6 +317,7 @@ public class ItemRuntimeData
         return sum;
     }
 
+    // 레벨업 시 표시될 설명 텍스트 반환
     public string GetLevelUpDesc(int nextLevel)
     {
         ItemData bd = baseData;
@@ -309,6 +337,7 @@ public class ItemRuntimeData
         }
     }
 
+    // 설명에 값 추가
     string ReplaceValue(string temp, int level)
     {
         int idx = level - 1;
@@ -332,6 +361,7 @@ public class ItemRuntimeData
             .Replace("{3}", idx < bd.value3.Length ? FormatValue(bd.value3[idx], bd.value3Display) : "");
     }
 
+    // 현재 보유 중인 아이템의 툴팁 설명 반환
     public string GetTooltipDesc()
     {
         if (baseData == null || curLevel <= 0)
@@ -361,6 +391,8 @@ public class ItemRuntimeData
                 .Replace("{2}", FormatValue(v2, baseData.value2Display))
                 .Replace("{3}", FormatValue(v3, baseData.value3Display));
     }
+
+    // 수치 표시 형식 변환 (퍼센트 / 일반 수치)
     string FormatValue(float value, ValueDisplayType type)
     {
         switch (type)
