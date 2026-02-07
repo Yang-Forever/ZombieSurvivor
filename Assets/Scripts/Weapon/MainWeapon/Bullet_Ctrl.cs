@@ -8,10 +8,10 @@ public class Bullet_Ctrl : MonoBehaviour
 {
     private BulletPool pool;
 
-    private float lifeTime;
-    private float speed = 50.0f;
-    private float damage;
-    private int penetration;
+    float lifeTime;
+    float speed = 50.0f;
+    float damage;
+    int penetration;
 
     // 오브젝트 풀에서 활성화될 때 수명 초기화
     private void OnEnable()

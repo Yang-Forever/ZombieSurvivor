@@ -13,7 +13,7 @@ public class ExpPool : MonoBehaviour
     private Queue<ExpObj_Ctrl> expPool = new Queue<ExpObj_Ctrl>();
     public Transform exps;
 
-    private int expPoolCount = 100;     // 초기 풀 생성 개수
+    int expPoolCount = 100;     // 초기 풀 생성 개수
 
     public static ExpPool Inst = null;
 

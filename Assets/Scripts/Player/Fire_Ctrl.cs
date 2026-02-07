@@ -10,7 +10,7 @@ public class Fire_Ctrl : MonoBehaviour
 
     ItemRuntimeData data;
 
-    private float fireTimer;
+    float fireTimer;
 
     [Header("Flame")]
     public Flame_Ctrl flame;

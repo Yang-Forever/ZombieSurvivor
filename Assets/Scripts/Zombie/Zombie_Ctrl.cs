@@ -41,16 +41,20 @@ public class Zombie_Ctrl : MonoBehaviour
     public static float BossSpeedMul = 1f;
     public static float BossDmgMul = 1f;
 
-    private float atkRange = 2.0f;
-    private float atkCool = 1.0f;
+    [Header("Attack")]
+    float atkRange = 2.0f;
+    float atkCool = 1.0f;
     float atkTimer = 0.0f;
+    float hitCheckWindow = 0.15f;
+    float hitCheckTimer = 0f;
+
+    bool hasAttacked = false;
 
     // 현재 상태
     private ZombiePool pool;
     AnimState state = AnimState.idle;
     [HideInInspector] public AnimState curState = AnimState.idle;
     [HideInInspector] public bool isDead = false;
-    bool hasAttacked = false;
 
     // 타겟(플레이어) 참조
     public Transform target;
@@ -169,6 +173,12 @@ public class Zombie_Ctrl : MonoBehaviour
         else
             atkTimer = 0.0f;
 
+        if (hitCheckTimer > 0f)
+        {
+            hitCheckTimer -= Time.deltaTime;
+            CheckAtkHit();
+        }
+
         if (zomType == ZombieType.Boss)
             BossMove();
         else if (zomType == ZombieType.Explosion)
@@ -247,6 +257,7 @@ public class Zombie_Ctrl : MonoBehaviour
         isExplosion = false;
         atkTimer = 0f;
         hasAttacked = false;
+        hitCheckTimer = 0f;
 
         ChangeAnim(AnimState.idle);
 
@@ -395,6 +406,21 @@ public class Zombie_Ctrl : MonoBehaviour
         ChangeAnim(AnimState.trace, 0.12f);
     }
 
+    // 플레이어 방향 회전
+    void RotateToPlayer()
+    {
+        if (!target) return;
+
+        Vector3 dir = target.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f)
+            return;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot,Time.deltaTime * 10f);
+    }
+
     // 폭발 처리
     void Explosion()
     {
@@ -427,11 +453,13 @@ public class Zombie_Ctrl : MonoBehaviour
 
         atkTimer = atkCool;
         hasAttacked = false;
+        hitCheckTimer = 0f;
 
         Vector3 dir = target.position - transform.position;
         dir.y = 0f;
 
-        RotateToPlayer();
+        if (dir.sqrMagnitude > 0.001f)
+            transform.rotation = Quaternion.LookRotation(dir);
 
         ChangeAnim(AnimState.attack, 0.12f);
     }
@@ -445,15 +473,32 @@ public class Zombie_Ctrl : MonoBehaviour
         if (hasAttacked || isDead || player == null)
             return;
 
+        hitCheckTimer = hitCheckWindow;
+    }
+
+    // 애니메이션 타이밍 실제 히트 판정
+    void CheckAtkHit()
+    {
+        if(hasAttacked || isDead || player == null)
+        {
+            hitCheckTimer = 0f;
+            return;
+        }
+
         float dist = Vector3.Distance(transform.position, player.transform.position);
-        if (dist > atkRange + 0.2f)
+
+        if (dist > atkRange + 0.5f)
             return;
 
-        Vector3 dirToPlayer = (player.transform.position - transform.position).normalized;
-        if (Vector3.Dot(transform.forward, dirToPlayer) < 0.1f)
+        Vector3 dirToPlayer = (player.transform.position - transform.position);
+        dirToPlayer.y = 0f;
+
+        float dot = Vector3.Dot(transform.forward, dirToPlayer);
+        if (dot < -0.3f)
             return;
 
         hasAttacked = true;
+        hitCheckTimer = 0f;
         player.HitDamage(damage);
     }
 
@@ -461,25 +506,6 @@ public class Zombie_Ctrl : MonoBehaviour
     public void OnAttackEnd()
     {
         ChangeAnim(AnimState.trace, 0.12f);
-    }
-
-    // 플레이어 방향 회전
-    void RotateToPlayer()
-    {
-        if (!target) return;
-
-        Vector3 dir = target.position - transform.position;
-        dir.y = 0f;
-
-        if (dir.sqrMagnitude < 0.001f)
-            return;
-
-        Quaternion targetRot = Quaternion.LookRotation(dir);
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            targetRot,
-            Time.deltaTime * 10f   // 회전 반응 속도
-        );
     }
 
     // 애니메이션 전환 처리

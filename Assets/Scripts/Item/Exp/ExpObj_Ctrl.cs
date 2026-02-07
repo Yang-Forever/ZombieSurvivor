@@ -11,9 +11,9 @@ public class ExpObj_Ctrl : MonoBehaviour
     private Player_Ctrl playerCtrl;
 
     float rotSpeed = 60.0f;
-    private float moveSpeed = 30f;
+    float moveSpeed = 30f;
 
-    private int expValue = 10;
+    int expValue = 10;
 
     bool isMagnet = false;  // 자석 상태 여부
 
